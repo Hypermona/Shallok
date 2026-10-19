@@ -1,0 +1,217 @@
+{
+  "app.checkout_summary": {
+    "key": "app.checkout_summary",
+    "content": "Checkout summary",
+    "context": "JSX text in <h3> (in App <h3>)",
+    "relative_file_path": "src/App.tsx",
+    "occurrences": [
+      {
+        "relative_file_path": "src/App.tsx",
+        "line": 25,
+        "column": 12
+      }
+    ],
+    "last_updated_at": "2026-10-19T13:47:39.689Z",
+    "key_version": 2,
+    "content_hash": "sha256:cf6e2b005dbfb75b3e929777d2990a577304493ad686307d69b7b8ef0740d345",
+    "status": "active"
+  },
+  "app.email_address": {
+    "key": "app.email_address",
+    "content": "Email address",
+    "context": "JSX text in <label> (in App <label>)",
+    "relative_file_path": "src/App.tsx",
+    "occurrences": [
+      {
+        "relative_file_path": "src/App.tsx",
+        "line": 16,
+        "column": 17
+      }
+    ],
+    "last_updated_at": "2026-10-19T13:47:39.689Z",
+    "key_version": 2,
+    "content_hash": "sha256:cc8311691e53b17ecdf9e6fa1e5664b8f793cd05289f047d57587d968dea3b1b",
+    "status": "active"
+  },
+  "app.enter_your_email": {
+    "key": "app.enter_your_email",
+    "content": "Enter your email",
+    "context": "placeholder attribute (in App <input>)",
+    "relative_file_path": "src/App.tsx",
+    "occurrences": [
+      {
+        "relative_file_path": "src/App.tsx",
+        "line": 17,
+        "column": 42
+      }
+    ],
+    "last_updated_at": "2026-10-19T13:47:39.689Z",
+    "key_version": 2,
+    "content_hash": "sha256:c9170ce6cbdaf2b93d64dc836b3ba3d28ce052fc745bc2e4f96500bdd66168ec",
+    "status": "active"
+  },
+  "app.guest_user": {
+    "key": "app.guest_user",
+    "content": "Guest User",
+    "context": "conditional UI message (in App <p>)",
+    "relative_file_path": "src/App.tsx",
+    "occurrences": [
+      {
+        "relative_file_path": "src/App.tsx",
+        "line": 26,
+        "column": 46
+      }
+    ],
+    "last_updated_at": "2026-10-19T13:47:39.689Z",
+    "key_version": 2,
+    "content_hash": "sha256:e6326b48e16d55035f8cf815de916088bde4704ebc92537acfcde86006e003ae",
+    "status": "active"
+  },
+  "app.pay_now": {
+    "key": "app.pay_now",
+    "content": "Pay now",
+    "context": "Primary action button to submit payment on checkout page",
+    "relative_file_path": "src/App.tsx",
+    "occurrences": [
+      {
+        "relative_file_path": "src/App.tsx",
+        "line": 27,
+        "column": 52
+      }
+    ],
+    "last_updated_at": "2026-10-19T14:17:00.508Z",
+    "key_version": 1,
+    "content_hash": "sha256:676112544d89f86aa792cb6b0830c01e18f7c4e68100c6ddd6549fb1bb45496c",
+    "status": "active"
+  },
+  "app.sign_in": {
+    "key": "app.sign_in",
+    "content": "Sign In",
+    "context": "JSX text in <button> (in App <button>)",
+    "relative_file_path": "src/App.tsx",
+    "occurrences": [
+      {
+        "relative_file_path": "src/App.tsx",
+        "line": 18,
+        "column": 63
+      }
+    ],
+    "last_updated_at": "2026-10-19T13:47:39.689Z",
+    "key_version": 2,
+    "content_hash": "sha256:a98653edaf986e6d9a97e9b929ee8e74b4feba4706d288d16079d61e3a031362",
+    "status": "active"
+  },
+  "app.sign_in_your_account": {
+    "key": "app.sign_in_your_account",
+    "content": "Sign in to your account",
+    "context": "JSX text in <h2> (in App <h2>)",
+    "relative_file_path": "src/App.tsx",
+    "occurrences": [
+      {
+        "relative_file_path": "src/App.tsx",
+        "line": 14,
+        "column": 12
+      }
+    ],
+    "last_updated_at": "2026-10-19T13:47:39.689Z",
+    "key_version": 2,
+    "content_hash": "sha256:d90c38cd07b2b6f04f1e9df7fba9418d7bd07616421bafa24577f8cec81a1764",
+    "status": "active"
+  },
+  "app.status": {
+    "key": "app.status",
+    "content": "Status:",
+    "context": "JSX text in <p> (in App <p>)",
+    "relative_file_path": "src/App.tsx",
+    "occurrences": [
+      {
+        "relative_file_path": "src/App.tsx",
+        "line": 26,
+        "column": 11
+      }
+    ],
+    "last_updated_at": "2026-10-19T13:47:39.689Z",
+    "key_version": 2,
+    "content_hash": "sha256:7aeef470589d9ae75b58e81b2649b44dca2c5398b1ad6e76b61129d4f9650101",
+    "status": "active"
+  },
+  "app.submit_login_form": {
+    "key": "app.submit_login_form",
+    "content": "Submit login form",
+    "context": "aria-label attribute (in App <button>)",
+    "relative_file_path": "src/App.tsx",
+    "occurrences": [
+      {
+        "relative_file_path": "src/App.tsx",
+        "line": 18,
+        "column": 43
+      }
+    ],
+    "last_updated_at": "2026-10-19T13:47:39.689Z",
+    "key_version": 2,
+    "content_hash": "sha256:e12d92b8101a88892e1c8a085eff06b187f65fbb255398dac612f3ca74db6658",
+    "status": "active"
+  },
+  "app.vip_member": {
+    "key": "app.vip_member",
+    "content": "VIP Member",
+    "context": "conditional UI message (in App <p>)",
+    "relative_file_path": "src/App.tsx",
+    "occurrences": [
+      {
+        "relative_file_path": "src/App.tsx",
+        "line": 26,
+        "column": 31
+      }
+    ],
+    "last_updated_at": "2026-10-19T13:47:39.689Z",
+    "key_version": 2,
+    "content_hash": "sha256:7c10174e949724edc4b75da89780401bd51abee9a4c842713133f6f7e069eb86",
+    "status": "active"
+  },
+  "app.welcome_shallok_store": {
+    "key": "app.welcome_shallok_store",
+    "content": "Welcome to Shallok Store",
+    "context": "JSX text in <h1> (in App <h1>)",
+    "relative_file_path": "src/App.tsx",
+    "occurrences": [
+      {
+        "relative_file_path": "src/App.tsx",
+        "line": 9,
+        "column": 12
+      }
+    ],
+    "last_updated_at": "2026-10-19T13:47:39.689Z",
+    "key_version": 2,
+    "content_hash": "sha256:dee0bd722603a25a927158daaeb6010471f572822f6148b4e9484129e0684967",
+    "status": "active"
+  },
+  "app.your_one-stop_destination_global": {
+    "key": "app.your_one-stop_destination_global",
+    "content": "Your one-stop destination for global shopping.",
+    "context": "JSX text in <p> (in App <p>)",
+    "relative_file_path": "src/App.tsx",
+    "occurrences": [
+      {
+        "relative_file_path": "src/App.tsx",
+        "line": 10,
+        "column": 11
+      }
+    ],
+    "last_updated_at": "2026-10-19T13:47:39.689Z",
+    "key_version": 2,
+    "content_hash": "sha256:c682eb88a54e7c373d79bc4a1e8baa20e4d385047ec46679bc65aea714d484de",
+    "status": "active"
+  },
+  "checkout.pay_now": {
+    "key": "checkout.pay_now",
+    "content": "Pay now",
+    "context": "JSX text in <button>",
+    "relative_file_path": "src/App.tsx",
+    "occurrences": [],
+    "last_updated_at": "2026-10-19T13:25:57.903Z",
+    "key_version": 1,
+    "content_hash": "sha256:28b3d1767767fb6f7d8caa6c5be01a84397ee83f686038da34084911ac95cde7",
+    "status": "obsolete"
+  }
+}

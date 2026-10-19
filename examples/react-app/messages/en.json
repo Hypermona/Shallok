@@ -1,0 +1,74 @@
+{
+  "app.checkout_summary": {
+    "value": "Checkout summary",
+    "source_version": 1,
+    "translated_at": "",
+    "status": "stale"
+  },
+  "app.email_address": {
+    "value": "Email address",
+    "source_version": 1,
+    "translated_at": "",
+    "status": "stale"
+  },
+  "app.enter_your_email": {
+    "value": "Enter your email",
+    "source_version": 1,
+    "translated_at": "",
+    "status": "stale"
+  },
+  "app.guest_user": {
+    "value": "Guest User",
+    "source_version": 1,
+    "translated_at": "",
+    "status": "stale"
+  },
+  "app.pay_now": {
+    "value": "",
+    "source_version": 1,
+    "translated_at": "",
+    "status": "missing"
+  },
+  "app.sign_in": {
+    "value": "Sign In",
+    "source_version": 1,
+    "translated_at": "",
+    "status": "stale"
+  },
+  "app.sign_in_your_account": {
+    "value": "Sign in to your account",
+    "source_version": 1,
+    "translated_at": "",
+    "status": "stale"
+  },
+  "app.status": {
+    "value": "Status:",
+    "source_version": 1,
+    "translated_at": "",
+    "status": "stale"
+  },
+  "app.submit_login_form": {
+    "value": "Submit login form",
+    "source_version": 1,
+    "translated_at": "",
+    "status": "stale"
+  },
+  "app.vip_member": {
+    "value": "VIP Member",
+    "source_version": 1,
+    "translated_at": "",
+    "status": "stale"
+  },
+  "app.welcome_shallok_store": {
+    "value": "Welcome to Shallok Store",
+    "source_version": 1,
+    "translated_at": "",
+    "status": "stale"
+  },
+  "app.your_one-stop_destination_global": {
+    "value": "Your one-stop destination for global shopping.",
+    "source_version": 1,
+    "translated_at": "",
+    "status": "stale"
+  }
+}

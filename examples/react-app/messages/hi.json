@@ -1,0 +1,74 @@
+{
+  "app.checkout_summary": {
+    "value": "चेकआउट सारांश",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.email_address": {
+    "value": "ईमेल पता",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.enter_your_email": {
+    "value": "अपना ईमेल दर्ज करें",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.guest_user": {
+    "value": "अतिथि उपयोगकर्ता",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.pay_now": {
+    "value": "अभी भुगतान करें",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.sign_in": {
+    "value": "साइन इन करें",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.sign_in_your_account": {
+    "value": "अपने खाते में साइन इन करें",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.status": {
+    "value": "स्थिति:",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.submit_login_form": {
+    "value": "लॉगिन फॉर्म सबमिट करें",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.vip_member": {
+    "value": "वीआईपी सदस्य",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.welcome_shallok_store": {
+    "value": "शालोक स्टोर में आपका स्वागत है",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.your_one-stop_destination_global": {
+    "value": "वैश्विक खरीदारी के लिए आपका वन-स्टॉप गंतव्य।",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  }
+}

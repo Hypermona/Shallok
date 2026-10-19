@@ -1,0 +1,74 @@
+{
+  "app.checkout_summary": {
+    "value": "ಚೆಕ್ಔಟ್ ಸಾರಾಂಶ",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.email_address": {
+    "value": "ಇಮೇಲ್ ವಿಳಾಸ",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.enter_your_email": {
+    "value": "ನಿಮ್ಮ ಇಮೇಲ್ ನಮೂದಿಸಿ",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.guest_user": {
+    "value": "ಅತಿಥಿ ಬಳಕೆದಾರ",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.pay_now": {
+    "value": "ಈಗ ಪಾವತಿಸಿ",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.sign_in": {
+    "value": "ಸೈನ್ ಇನ್ ಮಾಡಿ",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.sign_in_your_account": {
+    "value": "ನಿಮ್ಮ ಖಾತೆಗೆ ಸೈನ್ ಇನ್ ಮಾಡಿ",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.status": {
+    "value": "ಸ್ಥಿತಿ:",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.submit_login_form": {
+    "value": "ಲಾಗಿನ್ ಫಾರ್ಮ್ ಸಲ್ಲಿಸಿ",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.vip_member": {
+    "value": "ವಿಐಪಿ ಸದಸ್ಯ",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.welcome_shallok_store": {
+    "value": "ಶಲ್ಲೋಕ್ ಅಂಗಡಿಗೆ ಸುಸ್ವಾಗತ",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  },
+  "app.your_one-stop_destination_global": {
+    "value": "ಜಾಗತಿಕ ಶಾಪಿಂಗ್‌ಗಾಗಿ ನಿಮ್ಮ ಏಕೈಕ ತಾಣ.",
+    "source_version": 2,
+    "translated_at": "2026-10-19T13:47:40.654Z",
+    "status": "translated"
+  }
+}

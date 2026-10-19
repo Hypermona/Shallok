@@ -1,0 +1,74 @@
+{
+  "app.checkout_summary": {
+    "value": "[FR] Checkout summary",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:29:50.611Z",
+    "status": "translated"
+  },
+  "app.email_address": {
+    "value": "[FR] Email address",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:29:50.611Z",
+    "status": "translated"
+  },
+  "app.enter_your_email": {
+    "value": "Entrez votre e-mail",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:29:50.611Z",
+    "status": "translated"
+  },
+  "app.guest_user": {
+    "value": "[FR] Guest User",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:29:50.611Z",
+    "status": "translated"
+  },
+  "app.sign_in": {
+    "value": "Se connecter",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:29:50.611Z",
+    "status": "translated"
+  },
+  "app.sign_in_your_account": {
+    "value": "Connectez-vous à votre compte",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:29:50.611Z",
+    "status": "translated"
+  },
+  "app.status": {
+    "value": "[FR] Status:",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:29:50.611Z",
+    "status": "translated"
+  },
+  "app.submit_login_form": {
+    "value": "Soumettre le formulaire de connexion",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:29:50.611Z",
+    "status": "translated"
+  },
+  "app.vip_member": {
+    "value": "[FR] VIP Member",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:29:50.611Z",
+    "status": "translated"
+  },
+  "app.welcome_shallok_store": {
+    "value": "Bienvenue to Shallok Store",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:29:50.611Z",
+    "status": "translated"
+  },
+  "app.your_one-stop_destination_global": {
+    "value": "[FR] Your one-stop destination for global shopping.",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:29:50.611Z",
+    "status": "translated"
+  },
+  "checkout.pay_now": {
+    "value": "Payer maintenant",
+    "source_version": 1,
+    "translated_at": "2026-10-19T13:29:50.611Z",
+    "status": "translated"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "localization_version": 1,
+  "source_locale": "en",
+  "supported_locales": [
+    "en",
+    "kn",
+    "hi"
+  ],
+  "framework": {
+    "name": "react",
+    "router": "none",
+    "localization_library": "react-i18next",
+    "library_version": null
+  },
+  "paths": {
+    "source_directories": [
+      "src"
+    ],
+    "base_directory": "localization_base",
+    "translations_directory": "messages"
+  },
+  "key_strategy": "semantic",
+  "translation": {
+    "provider": "mock",
+    "model": null,
+    "batch_size": 25
+  },
+  "options": {
+    "include_accessibility_text": true,
+    "preserve_obsolete_keys": true,
+    "require_review_for_ambiguous_strings": true,
+    "require_review_for_stale_translations": true
+  }
+}

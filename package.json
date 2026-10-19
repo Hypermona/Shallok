@@ -1,0 +1,17 @@
+{
+  "name": "shallok-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm --recursive run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "pnpm --recursive run typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.8",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7"
+  }
+}
