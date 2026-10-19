@@ -1,6 +1,8 @@
 {
   "name": "shallok",
   "version": "0.1.0",
+  "description": "AI-Powered, Versioned Localization Tool for AI Coding Agents",
+  "license": "MIT",
   "type": "module",
   "bin": {
     "shallok": "./dist/index.js",
@@ -8,11 +10,35 @@
   },
   "files": [
     "dist",
-    "skills"
+    "skills",
+    "README.md",
+    "LICENSE"
   ],
   "main": "./dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hypermona/Shallok.git"
+  },
+  "keywords": [
+    "i18n",
+    "localization",
+    "internationalization",
+    "translation",
+    "ai-agent",
+    "nextjs",
+    "react",
+    "expo",
+    "astro",
+    "ast"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsc && node scripts/copy-skills.js",
+    "build": "tsup && node scripts/copy-skills.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -30,6 +56,7 @@
   "devDependencies": {
     "@types/node": "^22.13.8",
     "@types/react": "^18.3.18",
+    "tsup": "^9.0.0",
     "typescript": "^5.7.3"
   }
 }

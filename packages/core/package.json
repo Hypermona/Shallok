@@ -1,7 +1,16 @@
 {
   "name": "@shallok/core",
   "version": "0.1.0",
+  "description": "Core AST extractor, content hashing, and versioned catalog engine for Shallok",
+  "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hypermona/Shallok.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

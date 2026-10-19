@@ -9,6 +9,9 @@ const sourceDir = path.resolve(__dirname, '../../../skills');
 const targetDir = path.resolve(__dirname, '../skills');
 
 if (fs.existsSync(sourceDir)) {
+  if (fs.existsSync(targetDir)) {
+    fs.rmSync(targetDir, { recursive: true, force: true });
+  }
   fs.mkdirSync(targetDir, { recursive: true });
   fs.cpSync(sourceDir, targetDir, { recursive: true, force: true });
   console.log(`Copied skills from ${sourceDir} to ${targetDir}`);

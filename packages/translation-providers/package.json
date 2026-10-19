@@ -1,7 +1,16 @@
 {
   "name": "@shallok/translation-providers",
   "version": "0.1.0",
+  "description": "Mock and LLM translation provider integrations for Shallok",
+  "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hypermona/Shallok.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {

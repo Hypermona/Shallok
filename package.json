@@ -1,8 +1,14 @@
 {
   "name": "shallok-monorepo",
   "version": "0.1.0",
+  "description": "AI-Powered, Versioned Localization Monorepo",
+  "license": "MIT",
   "private": true,
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hypermona/Shallok.git"
+  },
   "scripts": {
     "build": "pnpm --recursive run build",
     "test": "vitest run",
