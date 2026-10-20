@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
+import { CLI_VERSION } from '../version.js';
 
 const execAsync = promisify(exec);
 
@@ -81,7 +82,7 @@ export async function ensureShallokDependency(projectRoot: string): Promise<bool
     } catch {
       // If remote registry lookup fails (e.g. offline or not yet published), update package.json directly
       pkg.devDependencies = pkg.devDependencies || {};
-      pkg.devDependencies['shallok'] = '^0.1.0';
+      pkg.devDependencies['shallok'] = `^${CLI_VERSION}`;
       await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf8');
       return true;
     }

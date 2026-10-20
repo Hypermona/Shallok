@@ -13,13 +13,14 @@ import { syncCommand } from './commands/sync.js';
 import { renameCommand } from './commands/rename.js';
 import { contextSetCommand } from './commands/context.js';
 import { entrySetCommand } from './commands/entry.js';
+import { CLI_VERSION } from './version.js';
 
 const program = new Command();
 
 program
   .name('shallok')
   .description('Shallok: AI-Powered, Versioned Localization Tool')
-  .version('0.1.3')
+  .version(CLI_VERSION)
   .option('--json', 'Output machine-readable JSON for AI agent orchestration');
 
 // 1. Analyze

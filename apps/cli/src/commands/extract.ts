@@ -13,6 +13,7 @@ import {
 } from '@shallok/core';
 import { Printer } from '../output/printer.js';
 import { ExtractionPreview } from '../ui/ExtractionPreview.js';
+import { CLI_VERSION } from '../version.js';
 
 export interface ExtractCommandOptions {
   dryRun?: boolean;
@@ -105,7 +106,7 @@ export async function extractCommand(options: ExtractCommandOptions): Promise<vo
     await storage.writeMetadata(
       {
         tool_name: 'shallok',
-        tool_version: '0.1.0',
+        tool_version: CLI_VERSION,
         schema_version: 1,
         last_extraction_at: now,
         total_keys: Object.keys(reconciliation.catalog).length,

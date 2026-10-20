@@ -9,6 +9,7 @@ import {
 import { getAdapter } from '@shallok/framework-adapters';
 import { Printer } from '../output/printer.js';
 import { installSkillsForProject } from '../installer/skills-installer.js';
+import { CLI_VERSION } from '../version.js';
 
 export interface InitOptions {
   source?: string;
@@ -88,7 +89,7 @@ export async function initCommand(options: InitOptions): Promise<void> {
     await storage.writeMetadata(
       {
         tool_name: 'shallok',
-        tool_version: '0.1.0',
+        tool_version: CLI_VERSION,
         schema_version: 1,
         last_extraction_at: now,
         total_keys: Object.keys(existingCanonical).length,
