@@ -7,3 +7,4 @@ coverage
 *.local
 *.tgz
 .npmrc
+apps/cli/skills

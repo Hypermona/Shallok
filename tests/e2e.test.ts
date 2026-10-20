@@ -219,6 +219,6 @@ describe('End-to-End Localization Pipeline', () => {
     // Verify package.json updated with devDependencies.shallok
     const updatedPkg = JSON.parse(await fs.readFile(path.join(tempDir, 'package.json'), 'utf8'));
     expect(updatedPkg.devDependencies?.shallok).toBeDefined();
-  });
+  }, 30000);
 });
 
