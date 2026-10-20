@@ -11,7 +11,7 @@ export async function localeAddCommand(
 
   const manifest = await storage.readManifest();
   if (!manifest) {
-    printer.error('No localization.json found. Run "localize init" first.');
+    printer.error('No localization.json found. Run "shallok init" first.');
     process.exit(1);
   }
 
@@ -46,7 +46,7 @@ export async function localeAddCommand(
   }
 
   printer.success(`Added locale "${cleanLocale}" to supported_locales.`);
-  printer.info(`Run "localize translate --locale ${cleanLocale}" to generate translations for this locale.`);
+  printer.info(`Run "shallok translate --locale ${cleanLocale}" to generate translations for this locale.`);
 }
 
 export async function localeRemoveCommand(
@@ -59,7 +59,7 @@ export async function localeRemoveCommand(
 
   const manifest = await storage.readManifest();
   if (!manifest) {
-    printer.error('No localization.json found. Run "localize init" first.');
+    printer.error('No localization.json found. Run "shallok init" first.');
     process.exit(1);
   }
 

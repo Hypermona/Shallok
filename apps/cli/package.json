@@ -5,8 +5,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "shallok": "./dist/index.js",
-    "localize": "./dist/index.js"
+    "shallok": "./dist/index.js"
   },
   "files": [
     "dist",

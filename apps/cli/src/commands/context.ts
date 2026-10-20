@@ -12,7 +12,7 @@ export async function contextSetCommand(
 
   const manifest = await storage.readManifest();
   if (!manifest) {
-    printer.error('No localization.json found. Run "localize init" first.');
+    printer.error('No localization.json found. Run "shallok init" first.');
     process.exit(1);
   }
 
