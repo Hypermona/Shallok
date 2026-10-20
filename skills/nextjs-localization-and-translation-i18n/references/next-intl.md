@@ -1,4 +1,16 @@
-# Next.js & next-intl Technical Reference
+## Loading Architecture: Local Bundled Loading for Server Components & SSR
+
+For Next.js App Router and Pages Router, **always keep translations LOCAL** in `messages/runtime/<locale>.json`.
+- **Zero Network Latency**: Server Components and Edge middleware resolve dictionaries directly from memory/disk without remote HTTP requests.
+- **Resilient Builds**: Static site exports and SSR hydration never fail due to external CDN outages.
+
+### Legacy Base Locale Migration
+If an existing Next.js app was importing from `src/locales/en.json` or `locales/en.json`:
+1. Reconcile keys into `localization_base/en.json`.
+2. Update the dynamic import in `src/i18n/request.ts` to target `../../messages/runtime/${locale}.json`.
+3. Deprecate and remove the old legacy locale folder.
+
+---
 
 ## Configuration Pattern
 
@@ -12,7 +24,7 @@ export const routing = defineRouting({
 });
 ```
 
-### 2. `src/i18n/request.ts`
+### 2. `src/i18n/request.ts` (Loads Local `messages/runtime/`)
 ```typescript
 import { getRequestConfig } from 'next-intl/server';
 import { routing } from './routing';

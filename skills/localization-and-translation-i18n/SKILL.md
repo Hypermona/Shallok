@@ -14,20 +14,95 @@ Use this skill when asked to add, configure, update, or audit localization in **
 
 ---
 
-## Agent Step 0: Verify & Install Shallok CLI
+## Agent Step 0: Mandatory Pre-Flight Checklist (Run Before ANY Code or Config Changes)
 
-**Before executing any localization commands, you (the AI Agent) MUST verify that `shallok` is available:**
+**Before making ANY changes to a new repo or an existing repo, you (the AI Agent) MUST execute the following checks in order:**
 
-1. Check `package.json` for `"shallok"` in `devDependencies` or run:
-   ```bash
-   npx shallok --version
-   ```
-2. **If `shallok` is NOT installed, install it immediately** using the project's package manager:
-   - If `pnpm-lock.yaml` exists: `pnpm add -D shallok`
-   - If `yarn.lock` exists: `yarn add -D shallok`
-   - If `bun.lockb` / `bun.lock` exists: `bun add -d shallok`
-   - Otherwise: `npm install -D shallok`
-   *(Alternatively, run commands directly via `npx shallok <command>`)*
+### 1. Check if Shallok is Installed
+- Inspect `package.json` for `"shallok"` or `"@shallok/cli"` in `devDependencies` (or `dependencies`), or run:
+  ```bash
+  npx shallok --version
+  ```
+- **If `shallok` is NOT installed, install it immediately into `devDependencies`:**
+  - If `pnpm-lock.yaml` exists: `pnpm add -D shallok`
+  - If `yarn.lock` exists: `yarn add -D shallok`
+  - If `bun.lockb` / `bun.lock` exists: `bun add -d shallok`
+  - Otherwise: `npm install -D shallok`
+
+### 2. Check if `localization.json` and `localization_base/` Exist
+- Verify that `localization.json` exists in the project root.
+- Verify that the `localization_base/` directory exists with `<source_locale>.json` and `metadata.json`.
+- **If either does NOT exist, create them using Shallok:**
+  ```bash
+  shallok init --source en --locales kn,hi --framework <name> --yes
+  ```
+
+### 3. NEVER Delete `localization.json` or `localization_base/`
+> [!CAUTION]
+> **CRITICAL PERSISTENCE RULE: NEVER DELETE `localization.json` OR `localization_base/`!**
+> - `localization.json` is the single source-of-truth project manifest.
+> - `localization_base/` contains the canonical catalog (`<source_locale>.json`) with per-key version numbers (`key_version`), cryptographic content hashes (`sha256:`), source code occurrences, and enriched semantic context, alongside `metadata.json`.
+> - **Under NO circumstances should you EVER delete `localization.json` or `localization_base/`**. Deleting them destroys the versioning history, wipes out human- and AI-enriched context, resets version counters, breaks incremental translation, and corrupts catalog synchronization.
+
+---
+
+## Core Architectural & Formatting Rules
+
+### Rule 1: Always Use Normalized Paths for Keys (Never Object-Based Paths)
+- **Always use normalized dot-separated key paths**: e.g., `"auth.login.title"`, `"checkout.pay_now"`, `"settings.profile.change_password"`.
+- **Never use nested object-based paths**: Do not structure keys or catalogs as nested JSON objects (e.g., `{ "auth": { "login": { "title": "..." } } }`). All keys in `localization_base/<source_locale>.json`, `messages/<locale>.json`, and runtime bundles MUST be flat normalized string paths.
+- **If an existing project is using object-based keys**:
+  - **STOP and ask the user** for confirmation to flatten them into normalized dot-separated key paths before proceeding with extraction or catalog edits.
+  - Explain that normalized dot-paths are required for deterministic AST extraction, per-key versioning, and collision-free reconciliation.
+  - Upon user approval, migrate and flatten all nested keys to normalized dot-paths.
+
+### Rule 2: Always Use the `messages/` Directory Structure (Ask User & Migrate If Different)
+- **Standard translations folder**: Shallok strictly standardizes on `messages/` for authoritative locale catalogs (`messages/<locale>.json`) and compiled runtime bundles (`messages/runtime/<locale>.json`).
+- **If the project uses any other folder structure** (e.g., `locales/`, `src/locales/`, `translations/`, `lang/`, `src/i18n/locales/`):
+  - **STOP and ask the user** for approval to switch to the standardized `messages/` directory structure.
+  - Upon user approval, **migrate** all existing translation files into `messages/`, update framework configuration and import paths, reconcile existing strings into `localization_base/`, and clean up the old directory.
+
+### Rule 3: Check Context for All Keys in `localization_base/{source_locale}` Before Translating
+- **Before generating any translations for any target locale**:
+  - Inspect all active keys in `localization_base/<source_locale>.json` (e.g., `localization_base/en.json`).
+  - Verify that **every key has meaningful, accurate semantic `context`**.
+  - If any key lacks context, has an empty context (`""`), or contains only generic AST descriptions (e.g., `"JSX text in button"`), you MUST inspect the component/screen and **generate rich semantic context for all such keys BEFORE generating translations**.
+  - Enrich context via:
+    ```bash
+    shallok context set <key> "<semantic_description>"
+    ```
+    or directly edit the `"context"` field in `localization_base/<source_locale>.json`.
+
+### Rule 4: Always Generate Translations from `localization_base/{source_locale}` and Its Context
+- **Never translate raw strings in isolation**:
+  - All translations MUST be generated directly from `localization_base/<source_locale>.json`, reading BOTH the source string (`content`) and its semantic `context`.
+  - The `context` provides critical disambiguation (grammatical gender, button vs label vs heading, formality, technical terminology).
+  - Strictly preserve all interpolation tokens (`{userName}`, `{count}`, `{amount}`) exactly as formatted in the source `content`.
+
+### Rule 5: Migrate Legacy Base Locale References to Specified Structure
+- **If the application already has a localization setup**:
+  - Inspect how the base/source locale (`source_locale`, e.g., `en`) is loaded.
+  - If any configuration or code file (e.g., `i18n.ts`, `src/i18n.ts`, `src/i18n/request.ts`, `app/_layout.tsx`, `main.tsx`) is importing or referencing a legacy file other than our specified structure (e.g., `src/locales/en.json`, `locales/en.json`, `public/locales/en.json`):
+    1. **Reconcile legacy base strings** into `localization_base/<source_locale>.json` and `messages/<source_locale>.json`.
+    2. **Update all code imports and references** across the project to point to the standardized compiled runtime bundle (`messages/runtime/<locale>.json`) or the CDN loader.
+    3. Remove or deprecate the legacy base locale file so that Shallok's AST extraction does NOT falsely extract the legacy JSON file as source code.
+
+### Rule 6: Translation Loading Strategy: Local for Static/SSR vs. CDN for Client/Mobile
+Choose the loading strategy based on application architecture:
+- **Static & SSR Applications (Astro, Next.js, and similar static/SSR apps)**:
+  - **Recommend keeping translations LOCAL** in `messages/runtime/<locale>.json`.
+  - Load directly from the local bundle or filesystem during server rendering or static build.
+  - **Benefits**: Zero network latency, instant First Contentful Paint (FCP), seamless Server Component hydration, and zero remote network failure risks.
+- **Client & Mobile Applications (Expo, React Native, React SPA / Vite)**:
+  - **Recommend loading translations from a CDN**:
+    - For mobile apps and client SPAs, suggest uploading compiled `messages/runtime/<locale>.json` to a CDN (e.g. Cloudflare R2, AWS S3/CloudFront, Supabase Storage, Vercel Blob).
+    - **Why?** Enables instant Over-the-Air (OTA) translation and typo fixes without requiring App Store / Google Play review cycles or full client web redeployments.
+    - **Scaffold CDN Environment Variables**:
+      - For Expo: `EXPO_PUBLIC_TRANSLATIONS_CDN_URL=https://cdn.yourdomain.com/locales`
+      - For React / Vite: `VITE_TRANSLATIONS_CDN_URL=https://cdn.yourdomain.com/locales`
+    - **Ask the user to set/update these ENV variables** with their actual CDN endpoint.
+    - **Resilient Runtime with Local Fallback**: The client loader fetches from CDN with caching (e.g., `AsyncStorage` / `localStorage`), while always maintaining bundled `messages/runtime/<locale>.json` as an offline fallback.
+    - **Upload Script**: Provide an upload script (e.g. `scripts/upload-locales.mjs`) to upload `messages/runtime/` bundles to the CDN.
 
 ---
 
@@ -56,6 +131,10 @@ Inspect repository architecture without modifying files:
 shallok analyze --json
 ```
 - Examine detected framework, router, programming language, and source paths (`src/`).
+- Check existing translation catalogs and folders (`locales/`, `src/locales/`, `messages/`).
+- Check if existing base locale is referencing legacy files (e.g., `src/locales/en.json`, `locales/en.json`).
+- Check if existing keys use object-based nesting or normalized dot-paths.
+- Determine if the project is Static/SSR (Next.js, Astro) or Client/Mobile (Expo, React Native, React SPA).
 - Determine candidate source files and target locales from the user request.
 - **Never edit files during Phase A.**
 
@@ -64,18 +143,27 @@ Present a concise plan to the developer:
 1. **Detected Framework**: Framework name and router type.
 2. **Runtime Localization Solution**: Suggested runtime library (e.g. `next-intl`, `react-i18next`, `expo-localization`).
 3. **Locales**: Source locale (e.g. `en`) and target locales (e.g. `kn` Kannada, `hi` Hindi).
-4. **Planned Scaffolding**:
+4. **Directory & Key Architecture Check**:
+   - If non-standard locale folders or legacy base locale references exist: Propose migrating to `messages/` and updating all import references to `messages/runtime/<locale>.json`.
+   - If object-based keys exist: Propose flattening to normalized dot-path keys and request user confirmation.
+5. **Loading Strategy Recommendation**:
+   - For **Astro / Next.js**: Recommend local bundle loading from `messages/runtime/`.
+   - For **Expo / React Native / React SPA**: Recommend CDN loading with `EXPO_PUBLIC_TRANSLATIONS_CDN_URL` or `VITE_TRANSLATIONS_CDN_URL`, with local fallback, and ask the user to configure the CDN ENV.
+6. **Planned Scaffolding**:
    - `localization.json` (Project manifest)
-   - `localization_base/<source_locale>.json` & `metadata.json` (Canonical catalog & versions)
-   - `messages/<locale>.json` (Locale catalogs)
+   - `localization_base/<source_locale>.json` & `metadata.json` (Canonical catalog & versions — **never delete**)
+   - `messages/<locale>.json` (Authoritative locale catalogs)
    - Framework adapter configuration
-5. Confirm with the user before proceeding (or proceed if `--yes` / user requested).
+7. Confirm with the user before proceeding (or proceed if `--yes` / user requested).
 
 ### Phase C: Initialize
 Initialize project configuration and catalogs:
 ```bash
 shallok init --source en --locales kn,hi --framework <name> --yes
 ```
+1. If migrating from an existing non-standard folder (e.g., `src/locales/en.json`), copy/migrate existing translations into `messages/` and reconcile into `localization_base/`.
+2. **Update all code references**: Replace legacy imports like `import en from './locales/en.json'` with `messages/runtime/` or CDN loader.
+3. If using CDN loading (Expo / React Native / React), create/update `.env` / `.env.example` with the CDN URL variable and prompt the user to configure it.
 
 ### Phase D: Extract & Enrich Context (AI-Driven)
 1. **Preview proposed extraction**:
@@ -86,32 +174,32 @@ shallok init --source en --locales kn,hi --framework <name> --yes
    ```bash
    shallok extract
    ```
-3. **Enrich Context (Performed by AI Agent)**:
+3. **Mandatory Context Check & Enrichment (Performed by AI Agent)**:
    - Inspect `localization_base/<source_locale>.json`.
-   - While the CLI records initial AST element locations, you analyze the actual screen and component purpose.
-   - Enrich `context` with semantic clarity (e.g. *"Primary CTA button on checkout page to trigger payment modal"*).
-   - Use the CLI:
+   - **Verify that every key has proper semantic context**.
+   - If any key lacks context or has only generic AST descriptions, analyze the screen and component purpose and enrich `context` BEFORE proceeding to translation:
      ```bash
      shallok context set <key> "<semantic_description>"
      ```
      Or edit `"context"` directly in `localization_base/<source_locale>.json`.
    - **Preservation Guarantee**: Shallok's reconciliation algorithm strictly preserves your enriched context across all future extractions.
 
-### Phase E: Translate (AI-Driven)
+### Phase E: Translate (AI-Driven from `localization_base/{source_locale}` + Context)
 **No external API keys or LLM provider subscriptions are required.**
 You, as the AI coding agent, generate the translations directly:
 
-1. **Identify entries needing translation**:
+1. **Verify Context First**: Ensure all keys in `localization_base/<source_locale>.json` have proper semantic context.
+2. **Identify entries needing translation**:
    ```bash
    shallok status --json
    ```
    Inspect `messages/<locale>.json` for keys with `status: "missing"` or `status: "stale"`.
 
-2. **Generate Translations**:
-   - Translate each entry into natural, culturally accurate target language using the source `content` and your enriched `context`.
+3. **Generate Translations from `localization_base/{source_locale}` and Its Context**:
+   - Translate each entry into natural, culturally accurate target language reading the source `content` AND its semantic `context` from `localization_base/<source_locale>.json`.
    - **Rule**: Strictly preserve all interpolation placeholders (`{name}`, `{count}`, `{price}`).
 
-3. **Update Target Locale Catalogs**:
+4. **Update Target Locale Catalogs**:
    Update `messages/<locale>.json` directly or using the CLI:
    ```bash
    shallok entry set <locale> <key> "<translated_text>"
@@ -133,7 +221,7 @@ You, as the AI coding agent, generate the translations directly:
    ```bash
    shallok extract --apply
    ```
-   Replaces hardcoded strings with `{t('key')}` and injects necessary hooks.
+   Replaces hardcoded strings with `{t('key')}` using normalized dot-separated key paths and injects necessary hooks.
 
 2. **Build runtime message bundles**:
    ```bash
@@ -161,10 +249,10 @@ You, as the AI coding agent, generate the translations directly:
   ```bash
   shallok locale add <locale>
   ```
-  Translate active keys into `messages/<locale>.json`, then run `shallok build && shallok validate`.
+  Check context in `localization_base/<source_locale>.json`, translate active keys into `messages/<locale>.json` using source content and context, then run `shallok build && shallok validate`.
 
 - **Source wording changed**:
-  Run `shallok extract`. Only modified keys increment version (`key_version`); only dependent entries are flagged `stale`. Translate the changed string, then `shallok build`.
+  Run `shallok extract`. Only modified keys increment version (`key_version`); only dependent entries are flagged `stale`. Check and update context if needed, translate the changed string from `localization_base/<source_locale>.json` and context, then `shallok build`.
 
 - **Rename a key**:
   ```bash

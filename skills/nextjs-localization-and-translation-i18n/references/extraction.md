@@ -3,6 +3,11 @@
 ## Extraction Strategy
 Shallok uses Babel AST parsing (`@babel/parser` and `@babel/traverse`) with full JSX and TypeScript support to safely inspect and transform source files without regular expressions.
 
+## Normalized Dot-Paths for Keys (Never Object-Based)
+- **Always use normalized dot-separated key paths**: e.g., `"checkout.pay_now"`, `"auth.login.title"`, `"dashboard.metrics.active_users"`.
+- **Never use object-based or nested object paths**: Catalogs must never store nested object trees.
+- **If an existing project uses object-based keys**: Ask the user for confirmation to flatten them to normalized dot-path keys before running extraction or migrating catalogs.
+
 ## What is Extracted
 1. **JSX Text Nodes**:
    - `<h1>Welcome</h1>` → `{t('home.welcome')}`
@@ -26,4 +31,4 @@ Shallok uses Babel AST parsing (`@babel/parser` and `@babel/traverse`) with full
 - Already localized calls: `t(...)`, `i18n.t(...)`.
 
 ## Dry-Run Mode
-Always use `localize extract --dry-run` to preview keys and occurrences before committing changes to source files.
+Always use `shallok extract --dry-run` to preview keys and occurrences before committing changes to source files.
