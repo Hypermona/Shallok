@@ -20,15 +20,6 @@ importers:
 
   apps/cli:
     dependencies:
-      '@shallok/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@shallok/framework-adapters':
-        specifier: workspace:*
-        version: link:../../packages/framework-adapters
-      '@shallok/translation-providers':
-        specifier: workspace:*
-        version: link:../../packages/translation-providers
       chalk:
         specifier: ^5.4.1
         version: 5.6.2
@@ -51,6 +42,15 @@ importers:
         specifier: ^3.24.2
         version: 3.25.76
     devDependencies:
+      '@shallok/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@shallok/framework-adapters':
+        specifier: workspace:*
+        version: link:../../packages/framework-adapters
+      '@shallok/translation-providers':
+        specifier: workspace:*
+        version: link:../../packages/translation-providers
       '@types/node':
         specifier: ^22.13.8
         version: 22.20.5

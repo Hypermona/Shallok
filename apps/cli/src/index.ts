@@ -19,7 +19,7 @@ const program = new Command();
 program
   .name('shallok')
   .description('Shallok: AI-Powered, Versioned Localization Tool')
-  .version('0.1.0')
+  .version('0.1.3')
   .option('--json', 'Output machine-readable JSON for AI agent orchestration');
 
 // 1. Analyze
