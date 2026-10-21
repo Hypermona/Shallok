@@ -16,6 +16,10 @@ Use this skill when asked to add, configure, update, or audit localization in **
 
 ## Agent Step 0: Mandatory Pre-Flight Checklist (Run Before ANY Code or Config Changes)
 
+> [!IMPORTANT]
+> **AI AGENT MANDATORY RULE: NEVER RUN `shallok setup`!**
+> The `shallok setup` command is solely for human developers to execute the initial setup (`npx shallok setup`). As an AI Agent, you already have access to this skill. You must **NEVER** run `shallok setup`. You must use `shallok init`, `shallok extract`, `shallok translate`, `shallok status`, `shallok validate`, and `shallok build`.
+
 **Before making ANY changes to a new repo or an existing repo, you (the AI Agent) MUST execute the following checks in order:**
 
 ### 1. Check if Shallok is Installed

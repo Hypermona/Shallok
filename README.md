@@ -24,17 +24,19 @@
 
 ## Two Ways to Use Shallok
 
-### 1. Developer CLI Entrypoint (`npx shallok init`)
+### 1. Developer CLI Quickstart (`npx shallok setup`)
 
 Run in any React, Next.js, Expo, Astro, or Vue project:
 ```bash
-npx shallok init
+npx shallok setup
 ```
 This command automatically:
-1. Analyzes project architecture, detected framework, and router.
-2. Scaffolds `localization.json`, `localization_base/`, `messages/`, and framework runtime files.
-3. **Installs `shallok` into `devDependencies`** (using your detected package manager: pnpm, npm, yarn, or bun).
-4. **Installs AI agent skills** directly into `.agents/skills/` and `skills/` so AI coding agents immediately recognize them.
+1. Detects project framework and architecture.
+2. **Installs `shallok` into `devDependencies`** (using your detected package manager: pnpm, npm, yarn, or bun).
+3. **Installs the matching AI agent skill** directly into `.agents/skills/` and `skills/` (e.g. Next.js, React, Expo, Astro, or general fallback).
+4. Displays the prompt to give to your AI agent: *"Add localization and translations for a, b, c, d languages"*.
+
+> **Note for AI Agents**: `shallok setup` is intended only for human developers. AI Agents should never run `shallok setup`; instead, agents run `shallok init`, `shallok extract`, `shallok translate`, etc.
 
 ### 2. Direct AI Agent Skill Entrypoint
 
@@ -54,6 +56,13 @@ The AI agent will:
 
 > Run via your package runner (`npx shallok`, `pnpm shallok`) or global install (`npm i -g shallok`).
 
+### 0. Setup (For Developers)
+Configures project devDependency and copies the AI agent skill:
+```bash
+shallok setup
+shallok setup --framework nextjs
+```
+
 ### 1. Repository Analysis
 Inspects repository architecture, detected framework, languages, and existing localization setup:
 ```bash
@@ -61,7 +70,7 @@ shallok analyze
 shallok analyze --json
 ```
 
-### 2. Initialization
+### 2. Initialization (For AI Agents or Developers)
 Scaffolds `localization.json`, `localization_base/`, message catalogs, and framework runtime files:
 ```bash
 # Interactive setup

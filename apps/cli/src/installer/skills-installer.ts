@@ -34,14 +34,18 @@ export async function detectPackageManager(projectRoot: string): Promise<Package
 
 function resolveSkillsDir(): string | null {
   const candidates = [
-    path.resolve(__dirname, '../../skills'),
     path.resolve(__dirname, '../skills'),
+    path.resolve(__dirname, '../../skills'),
     path.resolve(__dirname, '../../../skills'),
-    path.resolve(process.cwd(), 'skills'),
+    path.resolve(__dirname, '../../../../skills'),
   ];
 
   for (const candidate of candidates) {
-    if (fsSync.existsSync(candidate) && fsSync.statSync(candidate).isDirectory()) {
+    if (
+      fsSync.existsSync(candidate) &&
+      fsSync.statSync(candidate).isDirectory() &&
+      fsSync.existsSync(path.resolve(candidate, 'localization-and-translation-i18n'))
+    ) {
       return candidate;
     }
   }
@@ -93,7 +97,7 @@ export async function ensureShallokDependency(projectRoot: string): Promise<bool
 
 export async function installSkillsForProject(
   projectRoot: string,
-  framework: string
+  framework?: string
 ): Promise<InstallSkillsResult> {
   const pm = await detectPackageManager(projectRoot);
   const dependencyInstalled = await ensureShallokDependency(projectRoot);
@@ -111,7 +115,9 @@ export async function installSkillsForProject(
     };
   }
 
-  // Determine which skills to install
+  // Determine which skills to install:
+  // If project is under specific skill set, copy that skill.
+  // Otherwise, copy general 'localization-and-translation-i18n'.
   const frameworkSkillMap: Record<string, string> = {
     react: 'react-localization-and-translation-i18n',
     nextjs: 'nextjs-localization-and-translation-i18n',
@@ -119,11 +125,8 @@ export async function installSkillsForProject(
     astro: 'astro-localization-and-translation-i18n',
   };
 
-  const selectedSkills = ['localization-and-translation-i18n'];
-  const fwSkill = frameworkSkillMap[framework.toLowerCase()];
-  if (fwSkill) {
-    selectedSkills.push(fwSkill);
-  }
+  const fwSkill = framework ? frameworkSkillMap[framework.toLowerCase()] : undefined;
+  const selectedSkills = fwSkill ? [fwSkill] : ['localization-and-translation-i18n'];
 
   // Target directories:
   // 1. .agents/skills (Customization root for Antigravity & AI agents)

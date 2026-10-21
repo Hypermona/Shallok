@@ -8,7 +8,6 @@ import {
 } from '@shallok/core';
 import { getAdapter } from '@shallok/framework-adapters';
 import { Printer } from '../output/printer.js';
-import { installSkillsForProject } from '../installer/skills-installer.js';
 import { CLI_VERSION } from '../version.js';
 
 export interface InitOptions {
@@ -115,15 +114,11 @@ export async function initCommand(options: InitOptions): Promise<void> {
       router: analysis.framework.router,
     });
 
-    // 5. Install shallok dependency and add agent skills
-    const skillsResult = await installSkillsForProject(cwd, frameworkName);
-
     if (options.json) {
       printer.json({
         success: true,
         manifest,
         adapterResult,
-        skillsResult,
       });
       return;
     }
@@ -134,12 +129,6 @@ export async function initCommand(options: InitOptions): Promise<void> {
     printer.info(`Created messages directory: ${manifest.paths.translations_directory}/`);
     for (const f of adapterResult.createdFiles) {
       printer.info(`Generated adapter file: ${f}`);
-    }
-    if (skillsResult.dependencyInstalled) {
-      printer.info(`Installed shallok in devDependencies (${skillsResult.packageManager})`);
-    }
-    for (const skill of skillsResult.copiedSkills) {
-      printer.info(`Added AI agent skill: ${skill} (.agents/skills/ & skills/)`);
     }
   } catch (err: any) {
     printer.error(`Initialization failed: ${err.message}`);

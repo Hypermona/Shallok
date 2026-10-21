@@ -29,17 +29,19 @@
 
 ## Two Ways to Use Shallok
 
-### 1. Developer CLI Quickstart (`npx shallok init`)
+### 1. Developer CLI Quickstart (`npx shallok setup`)
 
 Run in any React, Next.js, Expo, Astro, or Vue project:
 ```bash
-npx shallok init
+npx shallok setup
 ```
 This command automatically:
-1. Analyzes project architecture, detected framework, and router.
-2. Scaffolds `localization.json`, `localization_base/`, `messages/`, and framework runtime files.
-3. Installs `shallok` into `devDependencies` using your detected package manager (pnpm, npm, yarn, or bun).
-4. Installs AI agent skills directly into `.agents/skills/` and `skills/` so AI coding agents immediately recognize them.
+1. Detects project framework and architecture.
+2. Installs `shallok` into `devDependencies` using your detected package manager (pnpm, npm, yarn, or bun).
+3. Installs the matching AI agent skill directly into `.agents/skills/` and `skills/` (e.g. Next.js, React, Expo, Astro, or general fallback).
+4. Displays the next-step prompt to give to your AI coding agent: *"Add localization and translations for a, b, c, d languages"*.
+
+> **Note for AI Agents**: `shallok setup` is intended only for human developers. AI Agents should never run `shallok setup`; instead, agents run `shallok init`, `shallok extract`, `shallok translate`, etc.
 
 ### 2. Direct AI Agent Skill Usage
 
@@ -59,11 +61,15 @@ The AI agent will:
 
 ### Project Setup & Analysis
 ```bash
+# Setup Shallok in project (install devDependency + copy AI agent skill) - For developers only
+shallok setup
+shallok setup --framework nextjs
+
 # Analyze repository architecture without modifying files
 shallok analyze
 shallok analyze --json
 
-# Initialize configuration and framework files
+# Initialize configuration and framework files (used by AI agents or developers)
 shallok init
 shallok init --source en --locales kn,hi,fr --framework react --yes
 ```

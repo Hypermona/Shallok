@@ -183,7 +183,7 @@ describe('End-to-End Localization Pipeline', () => {
     expect(staleReconcile.catalog[payNowKey].value).toBe('ಈಗ ಪಾವತಿಸಿ'); // Value preserved
   });
 
-  it('installs shallok into devDependencies and copies skills into .agents/skills/ and skills/', async () => {
+  it('installs shallok into devDependencies and copies specific framework skill (not general fallback)', async () => {
     const { installSkillsForProject } = await import('../apps/cli/src/installer/skills-installer.js');
 
     // Create a mock application package.json
@@ -196,9 +196,10 @@ describe('End-to-End Localization Pipeline', () => {
     const result = await installSkillsForProject(tempDir, 'expo');
 
     expect(result.copiedSkills).toContain('expo-localization-and-translation-i18n');
-    expect(result.copiedSkills).toContain('localization-and-translation-i18n');
+    expect(result.copiedSkills).not.toContain('localization-and-translation-i18n');
+    expect(result.copiedSkills).toHaveLength(1);
 
-    // Verify .agents/skills/
+    // Verify .agents/skills/ has the expo skill
     const agentSkillFile = path.join(
       tempDir,
       '.agents',
@@ -206,19 +207,83 @@ describe('End-to-End Localization Pipeline', () => {
       'expo-localization-and-translation-i18n',
       'SKILL.md'
     );
-    const coreSkillFile = path.join(
-      tempDir,
+    expect(await fs.stat(agentSkillFile)).toBeDefined();
+
+    // Verify package.json updated with devDependencies.shallok
+    const updatedPkg = JSON.parse(await fs.readFile(path.join(tempDir, 'package.json'), 'utf8'));
+    expect(updatedPkg.devDependencies?.shallok).toBeDefined();
+  }, 30000);
+
+  it('copies general fallback skill when project framework is not in specific skill set', async () => {
+    const { installSkillsForProject } = await import('../apps/cli/src/installer/skills-installer.js');
+    const fallbackDir = path.join(tempDir, 'fallback-project');
+    await fs.mkdir(fallbackDir, { recursive: true });
+
+    await fs.writeFile(
+      path.join(fallbackDir, 'package.json'),
+      JSON.stringify({ name: 'my-vue-app', version: '1.0.0', dependencies: { vue: '^3.0.0' } }, null, 2),
+      'utf8'
+    );
+
+    const result = await installSkillsForProject(fallbackDir, 'vue');
+
+    expect(result.copiedSkills).toEqual(['localization-and-translation-i18n']);
+
+    const fallbackSkillFile = path.join(
+      fallbackDir,
       '.agents',
       'skills',
       'localization-and-translation-i18n',
       'SKILL.md'
     );
-    expect(await fs.stat(agentSkillFile)).toBeDefined();
-    expect(await fs.stat(coreSkillFile)).toBeDefined();
+    expect(await fs.stat(fallbackSkillFile)).toBeDefined();
+  }, 30000);
 
-    // Verify package.json updated with devDependencies.shallok
-    const updatedPkg = JSON.parse(await fs.readFile(path.join(tempDir, 'package.json'), 'utf8'));
-    expect(updatedPkg.devDependencies?.shallok).toBeDefined();
+  it('setupCommand installs dependency and copies skill without running any other command (no localization.json created)', async () => {
+    const { setupCommand } = await import('../apps/cli/src/commands/setup.js');
+    const setupDir = path.join(tempDir, 'setup-test-project');
+    await fs.mkdir(setupDir, { recursive: true });
+
+    await fs.writeFile(
+      path.join(setupDir, 'package.json'),
+      JSON.stringify({ name: 'react-app', version: '1.0.0', dependencies: { react: '^18.0.0' } }, null, 2),
+      'utf8'
+    );
+
+    const prevCwd = process.cwd();
+    try {
+      process.chdir(setupDir);
+      await setupCommand({ json: true });
+
+      // Check package.json devDependencies
+      const pkg = JSON.parse(await fs.readFile(path.join(setupDir, 'package.json'), 'utf8'));
+      expect(pkg.devDependencies?.shallok).toBeDefined();
+
+      // Check skill was copied
+      const skillPath = path.join(setupDir, '.agents', 'skills', 'react-localization-and-translation-i18n', 'SKILL.md');
+      expect(await fs.stat(skillPath)).toBeDefined();
+
+      // Check that NO other command was run (no localization.json or localization_base/)
+      let manifestExists = false;
+      try {
+        await fs.stat(path.join(setupDir, 'localization.json'));
+        manifestExists = true;
+      } catch {
+        manifestExists = false;
+      }
+      expect(manifestExists).toBe(false);
+
+      let baseDirExists = false;
+      try {
+        await fs.stat(path.join(setupDir, 'localization_base'));
+        baseDirExists = true;
+      } catch {
+        baseDirExists = false;
+      }
+      expect(baseDirExists).toBe(false);
+    } finally {
+      process.chdir(prevCwd);
+    }
   }, 30000);
 });
 

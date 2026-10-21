@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import { analyzeCommand } from './commands/analyze.js';
+import { setupCommand } from './commands/setup.js';
 import { initCommand } from './commands/init.js';
 import { extractCommand } from './commands/extract.js';
 import { translateCommand } from './commands/translate.js';
@@ -22,6 +23,17 @@ program
   .description('Shallok: AI-Powered, Versioned Localization Tool')
   .version(CLI_VERSION)
   .option('--json', 'Output machine-readable JSON for AI agent orchestration');
+
+// 0. Setup (For developers only, not to be run by AI agents)
+program
+  .command('setup')
+  .description('Set up Shallok in project: install devDependency and copy agent skill (For developers only)')
+  .option('--framework <name>', 'Override framework detection (react, nextjs, expo, astro)')
+  .option('--json', 'Output machine-readable JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    await setupCommand({ ...options, json: isJson });
+  });
 
 // 1. Analyze
 program
