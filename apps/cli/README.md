@@ -38,7 +38,7 @@ npx shallok setup
 This command automatically:
 1. Detects project framework and architecture.
 2. Installs `shallok` into `devDependencies` using your detected package manager (pnpm, npm, yarn, or bun).
-3. Installs the matching AI agent skill directly into `.agents/skills/` and `skills/` (e.g. Next.js, React, Expo, Astro, or general fallback).
+3. Installs the matching AI agent skill directly into `.agents/skills/` (e.g. Next.js, React, Expo, Astro, or general fallback).
 4. Displays the next-step prompt to give to your AI coding agent: *"Add localization and translations for a, b, c, d languages"*.
 
 > **Note for AI Agents**: `shallok setup` is intended only for human developers. AI Agents should never run `shallok setup`; instead, agents run `shallok init`, `shallok extract`, `shallok translate`, etc.

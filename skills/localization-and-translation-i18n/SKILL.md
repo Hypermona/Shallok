@@ -98,15 +98,25 @@ Choose the loading strategy based on application architecture:
   - Load directly from the local bundle or filesystem during server rendering or static build.
   - **Benefits**: Zero network latency, instant First Contentful Paint (FCP), seamless Server Component hydration, and zero remote network failure risks.
 - **Client & Mobile Applications (Expo, React Native, React SPA / Vite)**:
-  - **Recommend loading translations from a CDN**:
-    - For mobile apps and client SPAs, suggest uploading compiled `messages/runtime/<locale>.json` to a CDN (e.g. Cloudflare R2, AWS S3/CloudFront, Supabase Storage, Vercel Blob).
-    - **Why?** Enables instant Over-the-Air (OTA) translation and typo fixes without requiring App Store / Google Play review cycles or full client web redeployments.
-    - **Scaffold CDN Environment Variables**:
-      - For Expo: `EXPO_PUBLIC_TRANSLATIONS_CDN_URL=https://cdn.yourdomain.com/locales`
-      - For React / Vite: `VITE_TRANSLATIONS_CDN_URL=https://cdn.yourdomain.com/locales`
-    - **Ask the user to set/update these ENV variables** with their actual CDN endpoint.
-    - **Resilient Runtime with Local Fallback**: The client loader fetches from CDN with caching (e.g., `AsyncStorage` / `localStorage`), while always maintaining bundled `messages/runtime/<locale>.json` as an offline fallback.
-    - **Upload Script**: Provide an upload script (e.g. `scripts/upload-locales.mjs`) to upload `messages/runtime/` bundles to the CDN.
+  - **Existing Projects with Remote Fetching**:
+    - If the project **already has a remote setup to fetch translations** (e.g. Supabase, custom backend API, CDN, S3, or external service):
+    - **DO NOT TOUCH OR MODIFY THE REMOTE FETCHING SETUP!** Keep the remote loader, caching logic, and endpoints intact.
+    - **ONLY the default / source locale (e.g. `en`) translation should be done in Shallok's way**:
+      - Maintain canonical keys in `localization_base/<source_locale>.json`.
+      - Bundle ONLY the default locale fallback in `messages/runtime/<source_locale>.json` (or `messages/<source_locale>.json`).
+      - Non-default locales continue to be served via the existing remote setup.
+  - **New Setups with CDN / Remote Loading**:
+    - If the user wants to load translations from CDN/remote:
+    - **NO NEED TO HAVE FALLBACKS FOR ALL LANGUAGES**: Do NOT create or statically import local fallback message files for every language.
+    - **MAKE SURE TARGET LOCALES ARE NOT BUNDLED WITH FINAL OUTPUT**:
+      - **ONLY bundle the default / source locale** (e.g. `en`) as the initial/offline fallback.
+      - **DO NOT statically import target locales** (e.g. `kn`, `hi`, `fr`, `es`) in client code or app entry points!
+      - Target locales are fetched on-demand from CDN / remote source and cached locally (`AsyncStorage` / `localStorage`).
+      - This keeps final client/mobile bundle size minimal and enables instant OTA copy updates.
+  - **Scaffold CDN Environment Variables**:
+    - For Expo: `EXPO_PUBLIC_TRANSLATIONS_CDN_URL=https://cdn.yourdomain.com/locales`
+    - For React / Vite: `VITE_TRANSLATIONS_CDN_URL=https://cdn.yourdomain.com/locales`
+  - **Upload Script**: Provide an upload script (e.g. `scripts/upload-locales.mjs`) to upload compiled `messages/runtime/` bundles to the CDN.
 
 ---
 

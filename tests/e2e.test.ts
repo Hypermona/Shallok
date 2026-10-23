@@ -259,9 +259,18 @@ describe('End-to-End Localization Pipeline', () => {
       const pkg = JSON.parse(await fs.readFile(path.join(setupDir, 'package.json'), 'utf8'));
       expect(pkg.devDependencies?.shallok).toBeDefined();
 
-      // Check skill was copied
+      // Check skill was copied ONLY to .agents/skills and NOT to root skills/
       const skillPath = path.join(setupDir, '.agents', 'skills', 'react-localization-and-translation-i18n', 'SKILL.md');
       expect(await fs.stat(skillPath)).toBeDefined();
+
+      let rootSkillExists = false;
+      try {
+        await fs.stat(path.join(setupDir, 'skills'));
+        rootSkillExists = true;
+      } catch {
+        rootSkillExists = false;
+      }
+      expect(rootSkillExists).toBe(false);
 
       // Check that NO other command was run (no localization.json or localization_base/)
       let manifestExists = false;

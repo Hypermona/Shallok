@@ -60,7 +60,7 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
     }
 
     for (const skill of result.copiedSkills) {
-      printer.info(`Added AI agent skill: ${skill} (.agents/skills/ & skills/)`);
+      printer.info(`Added AI agent skill: ${skill} (.agents/skills/)`);
     }
 
     // 3. Clear prompt instructions for the developer to hand off to their AI agent

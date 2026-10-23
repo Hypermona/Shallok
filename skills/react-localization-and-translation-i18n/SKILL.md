@@ -91,16 +91,25 @@ Use this skill when asked to add, configure, update, or audit localization in **
     2. **Update all code imports** to point to the standardized compiled runtime bundle (`messages/runtime/<locale>.json`) or the CDN loader.
     3. Remove or deprecate the legacy base locale file so that Shallok does NOT extract it as source code (preventing false occurrences like `"relative_file_path": "src/locales/en.json"`).
 
-### Rule 6: React Client Architecture: CDN-Backed Dynamic Loading (OTA Updates)
-- **Suggest loading translations from a CDN for React SPAs**:
-  - In modern client web applications (Vite, Webpack SPAs), fetching translations from a CDN allows continuous translation updates without rebuilding or redeploying the web frontend.
-  - Recommend hosting compiled `messages/runtime/<locale>.json` on a CDN or cloud storage bucket (e.g. Cloudflare R2, AWS S3/CloudFront, Supabase Storage, Vercel Blob).
+### Rule 6: React Client Architecture: Remote/CDN Loading & Zero Bundle Bloat
+- **Existing Projects with Remote Fetching**:
+  - If the project **already has a remote setup to fetch translations** (e.g. from backend API, Supabase, CDN, S3, or external service):
+  - **DO NOT TOUCH OR MODIFY THE REMOTE FETCHING SETUP!** Keep the remote loader, caching logic, and endpoints intact.
+  - **ONLY the default / source locale (e.g. `en`) translation should be done in Shallok's way**:
+    - Maintain canonical keys in `localization_base/<source_locale>.json`.
+    - Bundle ONLY the default locale fallback in `messages/runtime/<source_locale>.json` (or `messages/<source_locale>.json`).
+    - Remote locales continue to be served via the existing remote setup.
+- **New Setups with CDN / Remote Loading**:
+  - If the user wants to load translations from CDN/remote:
+  - **NO NEED TO HAVE FALLBACKS FOR ALL LANGUAGES**: Do NOT create or statically import local fallback message files for every language.
+  - **MAKE SURE TARGET LOCALES ARE NOT BUNDLED WITH FINAL OUTPUT**:
+    - **ONLY bundle the default / source locale** (e.g. `en`) as the initial/offline fallback (`import enFallback from '../messages/runtime/en.json'`).
+    - **DO NOT statically import target locales** (e.g. `kn`, `hi`, `fr`, `es`) in `src/i18n.ts` or app code!
+    - Target locales are fetched on-demand from the CDN / remote source and cached in `localStorage`.
+    - This keeps the final web bundle size small and allows instant copy updates.
 - **Environment Variables & Configuration**:
   - Define `VITE_TRANSLATIONS_CDN_URL=https://cdn.yourdomain.com/locales` (or `REACT_APP_TRANSLATIONS_CDN_URL`) in `.env` and `.env.example`.
-  - **Prompt and ask the user to configure/update `VITE_TRANSLATIONS_CDN_URL`** with their actual CDN endpoint.
-- **Resilient Runtime Loader with Local Offline Fallback**:
-  - Configure `src/i18n.ts` using `i18next-http-backend` or custom fetch to load from `${VITE_TRANSLATIONS_CDN_URL}/${locale}.json` with `localStorage` caching.
-  - Always bundle `messages/runtime/<locale>.json` locally as fallback resources, ensuring the application renders immediately before network requests complete.
+  - Prompt and ask the user to configure `VITE_TRANSLATIONS_CDN_URL` with their actual CDN endpoint.
 - **Upload Script**:
   - Suggest / scaffold an upload script (e.g., `scripts/upload-locales.mjs`) to publish compiled `messages/runtime/` dictionaries to the CDN.
 

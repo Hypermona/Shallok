@@ -6,8 +6,8 @@
 | :--- | :--- | :--- | :--- |
 | **Astro** (`astro:i18n`) | **Local** (`messages/runtime/`) | Static builds (SSG) & SSR; zero network hops, zero build dependency on external services. | Bundled in `src/i18n/utils.ts` |
 | **Next.js** (`next-intl`) | **Local** (`messages/runtime/`) | Server Components & SSR; instant First Contentful Paint, zero latency in Node/Edge. | Bundled in `src/i18n/request.ts` |
-| **Expo / React Native** | **CDN-Backed** (+ Local Fallback) | Instant Over-The-Air (OTA) translation & typo fixes without waiting for App Store review. | `EXPO_PUBLIC_TRANSLATIONS_CDN_URL` + AsyncStorage caching + local fallback |
-| **React SPA** (Vite / CRA) | **CDN-Backed** (+ Local Fallback) | Instant copy updates without rebuilding web bundle. | `VITE_TRANSLATIONS_CDN_URL` + localStorage caching + local fallback |
+| **Expo / React Native** | **CDN-Backed** (+ Local Fallback) | Instant Over-The-Air (OTA) translation & typo fixes without waiting for App Store review. | `EXPO_PUBLIC_TRANSLATIONS_CDN_URL` + AsyncStorage caching (default locale only bundled) |
+| **React SPA** (Vite / CRA) | **CDN-Backed** (+ Local Fallback) | Instant copy updates without rebuilding web bundle. | `VITE_TRANSLATIONS_CDN_URL` + localStorage caching (default locale only bundled) |
 
 ---
 
@@ -16,7 +16,9 @@
 ### 1. React (`react-i18next`)
 - **Initialization**: Generates `src/i18n.ts` configuring `i18next` with `initReactI18next`.
 - **Runtime Messages**: Generates clean key-value message files in `messages/runtime/<locale>.json`.
-- **CDN Loading**: Suggest `VITE_TRANSLATIONS_CDN_URL` in `.env` with local `messages/runtime/` fallback and `scripts/upload-locales.mjs`.
+- **Remote & CDN Loading**:
+  - If project already has remote fetching setup: **DO NOT TOUCH** it. Only manage default locale (`en`) the Shallok way.
+  - If setting up CDN loading: No fallback for all languages. **Ensure target locales are NOT bundled with final output**; only bundle default locale (`en`).
 - **Legacy Migration**: If `src/main.tsx` or `src/i18n.ts` imported `src/locales/en.json`, migrate to `messages/runtime/` or CDN loader.
 - **AST Transformation**:
   - Adds `import { useTranslation } from 'react-i18next';`
@@ -38,7 +40,9 @@
 ### 3. Expo / React Native (`expo-localization` + `react-i18next`)
 - **Initialization**: Generates `i18n.ts` using `getLocales` from `expo-localization` and `i18next`.
 - **Runtime Messages**: Generates runtime message files in `messages/runtime/<locale>.json`.
-- **CDN Loading**: Suggest `EXPO_PUBLIC_TRANSLATIONS_CDN_URL` in `.env` with `AsyncStorage` caching and local `messages/runtime/` fallback.
+- **Remote & CDN Loading**:
+  - If project already has remote fetching setup: **DO NOT TOUCH** it. Only manage default locale (`en`) the Shallok way.
+  - If setting up CDN loading: No fallback for all languages. **Ensure target locales are NOT bundled with final output**; only bundle default locale (`en`).
 - **Legacy Migration**: If `app/_layout.tsx` or `src/i18n.ts` imported `src/locales/en.json`, migrate to `messages/runtime/` or CDN loader.
 - **AST Transformation**:
   - Adds `import { useTranslation } from 'react-i18next';`

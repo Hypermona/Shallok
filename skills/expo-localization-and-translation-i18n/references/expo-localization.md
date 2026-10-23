@@ -4,6 +4,25 @@
 
 Mobile apps benefit greatly from CDN-backed translation loading because updating text via App Store / Google Play requires full binary reviews.
 
+### Critical Rules for Remote & CDN Translation Setups
+
+1. **Existing Projects with Remote Fetching**:
+   - If the project **already has a remote setup to fetch translations** (e.g. from Supabase, custom backend API, CDN, S3, or external service):
+   - **DO NOT TOUCH OR MODIFY THE REMOTE FETCHING SETUP!** Keep the remote loader, caching logic, and endpoints intact.
+   - **ONLY the default / source locale (e.g. `en`) translation should be done in Shallok's way**:
+     - Maintain canonical keys in `localization_base/<source_locale>.json`.
+     - Bundle ONLY the default locale fallback in `messages/runtime/<source_locale>.json` (or `messages/<source_locale>.json`).
+     - Remote locales continue to be fetched via the project's existing remote setup.
+
+2. **New Remote/CDN Setup**:
+   - If user wants to load translations from CDN/remote:
+   - **NO NEED TO HAVE FALLBACK FOR ALL LANGUAGES**: Do NOT create or statically import local fallback bundles for every language.
+   - **ENSURE TARGET LOCALES ARE NOT BUNDLED WITH FINAL OUTPUT**:
+     - **ONLY bundle the default/source locale** (e.g. `en`) as the initial/offline fallback.
+     - **NEVER** statically import non-default locales (e.g. `kn`, `hi`, `fr`, `es`) into `i18n.ts` or app code!
+     - Non-default locales are fetched on-demand from CDN / remote storage and cached in `AsyncStorage`.
+     - This guarantees the production mobile binary stays minimal in size.
+
 ### 1. CDN Dynamic Loading Pattern (Recommended for Production & OTA Updates)
 
 Configure `.env`:
@@ -18,21 +37,32 @@ import { initReactI18next } from 'react-i18next';
 import { getLocales } from 'expo-localization';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Local bundled fallbacks (from our specified structure)
+// ONLY the default/source locale is bundled as initial local fallback:
 import enFallback from './messages/runtime/en.json';
-import knFallback from './messages/runtime/kn.json';
 
 const CDN_URL = process.env.EXPO_PUBLIC_TRANSLATIONS_CDN_URL;
 
+// DO NOT statically import or bundle target locales (e.g. kn, hi, fr, es)!
+// They are fetched dynamically on-demand from the CDN and cached in AsyncStorage.
 const resources = {
   en: { translation: enFallback },
-  kn: { translation: knFallback },
 };
 
 const deviceLanguage = getLocales()[0]?.languageCode ?? 'en';
 
 export async function fetchRemoteTranslations(locale: string) {
-  if (!CDN_URL) return;
+  // If locale is default or already loaded, no network request needed
+  if (locale === 'en' || !CDN_URL) return;
+
+  // 1. Try loading from AsyncStorage cache first
+  try {
+    const cached = await AsyncStorage.getItem(`translations_${locale}`);
+    if (cached) {
+      i18n.addResourceBundle(locale, 'translation', JSON.parse(cached), true, true);
+    }
+  } catch {}
+
+  // 2. Fetch fresh translation from CDN
   try {
     const res = await fetch(`${CDN_URL}/${locale}.json`);
     if (res.ok) {
@@ -41,7 +71,7 @@ export async function fetchRemoteTranslations(locale: string) {
       await AsyncStorage.setItem(`translations_${locale}`, JSON.stringify(messages));
     }
   } catch (err) {
-    // Falls back seamlessly to bundled local messages
+    // If offline, falls back to cached bundle or default fallback (en)
   }
 }
 

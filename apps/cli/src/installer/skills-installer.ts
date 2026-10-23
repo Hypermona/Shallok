@@ -128,12 +128,10 @@ export async function installSkillsForProject(
   const fwSkill = framework ? frameworkSkillMap[framework.toLowerCase()] : undefined;
   const selectedSkills = fwSkill ? [fwSkill] : ['localization-and-translation-i18n'];
 
-  // Target directories:
-  // 1. .agents/skills (Customization root for Antigravity & AI agents)
-  // 2. skills/ (Project root skills folder)
+  // Target directory:
+  // .agents/skills (Customization root for Antigravity & AI agents)
   const targetRoots = [
     path.resolve(projectRoot, '.agents', 'skills'),
-    path.resolve(projectRoot, 'skills'),
   ];
 
   for (const targetRoot of targetRoots) {
