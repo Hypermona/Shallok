@@ -279,6 +279,27 @@ You, as the AI coding agent, generate the translations directly:
 5. **Summarize results**:
    Present modified components, added locales, completeness, and verification state.
 
+### Phase G: Publish to Shallok Cloud & Global Edge CDN (MCP / CLI Push)
+Once runtime bundles are compiled and validated:
+1. **Check if project is connected to Shallok Cloud**:
+   - Inspect `localization.json` for the `"cloud"` configuration block.
+2. **If `"cloud"` is present**:
+   - Call the Shallok MCP tool `shallok_sync_project`:
+     This automatically syncs the manifest and all compiled bundles to the Shallok Dashboard and activates edge CDN routing.
+   - Alternatively, execute:
+     ```bash
+     shallok push
+     ```
+   - Confirm to the developer with their live CDN endpoint:
+     > *"✨ Live Edge CDN: `https://<tenant>.shallok.com/<project>/:locale.json`"*
+3. **If `"cloud"` is NOT yet configured**:
+   - Prompt the developer:
+     > *"✨ Your translations are generated and validated! To publish these translations to Shallok Cloud and serve them with zero latency from the Global Edge CDN, run:"*
+     ```bash
+     npx shallok link --token <shk_live_...>
+     ```
+     > *(Generate an access token at https://dash.shallok.com/mcp)*
+
 ---
 
 ## React Code Patterns & Best Practices

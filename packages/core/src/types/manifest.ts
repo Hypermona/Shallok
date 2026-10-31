@@ -26,6 +26,14 @@ export const OptionsConfigSchema = z.object({
   require_review_for_stale_translations: z.boolean().default(true),
 });
 
+export const CloudConfigSchema = z.object({
+  project_id: z.string().min(1),
+  workspace: z.string().optional(),
+  dashboard_url: z.string().url().default('https://dash.shallok.com'),
+  cdn_url: z.string().url().optional(),
+  auto_publish: z.boolean().default(true),
+});
+
 export const LocalizationManifestSchema = z.object({
   schema_version: z.number().int().default(1),
   localization_version: z.number().int().default(1),
@@ -33,6 +41,7 @@ export const LocalizationManifestSchema = z.object({
   supported_locales: z.array(z.string().min(2)),
   framework: FrameworkConfigSchema,
   paths: PathsConfigSchema,
+  cloud: CloudConfigSchema.optional(),
   key_strategy: z.enum(['semantic', 'hierarchical', 'hash']).default('semantic'),
   translation: TranslationConfigSchema,
   options: OptionsConfigSchema,
@@ -42,4 +51,5 @@ export type FrameworkConfig = z.infer<typeof FrameworkConfigSchema>;
 export type PathsConfig = z.infer<typeof PathsConfigSchema>;
 export type TranslationConfig = z.infer<typeof TranslationConfigSchema>;
 export type OptionsConfig = z.infer<typeof OptionsConfigSchema>;
+export type CloudConfig = z.infer<typeof CloudConfigSchema>;
 export type LocalizationManifest = z.infer<typeof LocalizationManifestSchema>;

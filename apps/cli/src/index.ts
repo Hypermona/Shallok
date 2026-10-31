@@ -14,6 +14,9 @@ import { syncCommand } from './commands/sync.js';
 import { renameCommand } from './commands/rename.js';
 import { contextSetCommand } from './commands/context.js';
 import { entrySetCommand } from './commands/entry.js';
+import { linkCommand } from './commands/link.js';
+import { pushCommand } from './commands/push.js';
+import { mcpCommand } from './commands/mcp.js';
 import { CLI_VERSION } from './version.js';
 
 const program = new Command();
@@ -193,6 +196,41 @@ program
   .action(async (options) => {
     const isJson = options.json || program.opts().json;
     await syncCommand({ ...options, json: isJson });
+  });
+
+// 12. Link (Connect project to Shallok Cloud Dashboard)
+program
+  .command('link')
+  .description('Link project with Shallok Cloud Dashboard and configure MCP')
+  .option('--project <id>', 'Project ID')
+  .option('--token <token>', 'Shallok API Access Token')
+  .option('--workspace <slug>', 'Workspace subdomain slug')
+  .option('--url <url>', 'Shallok Dashboard URL')
+  .option('--json', 'Output machine-readable JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    await linkCommand({ ...options, json: isJson });
+  });
+
+// 13. Push (Upload compiled translations to Shallok Cloud & Edge CDN)
+program
+  .command('push')
+  .description('Upload compiled translation bundles to Shallok Cloud and Global Edge CDN')
+  .option('--project <id>', 'Project ID override')
+  .option('--token <token>', 'API Token override')
+  .option('--url <url>', 'Dashboard URL override')
+  .option('--json', 'Output machine-readable JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    await pushCommand({ ...options, json: isJson });
+  });
+
+// 14. MCP (Local Stdio Model Context Protocol Server)
+program
+  .command('mcp')
+  .description('Start local stdio Model Context Protocol (MCP) server for Cursor / Claude / Antigravity')
+  .action(async () => {
+    await mcpCommand();
   });
 
 program.parseAsync(process.argv).catch((err) => {

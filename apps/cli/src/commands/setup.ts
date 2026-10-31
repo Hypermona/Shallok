@@ -1,3 +1,5 @@
+import path from 'node:path';
+import fs from 'node:fs/promises';
 import chalk from 'chalk';
 import { analyzeProject } from '@shallok/core';
 import { Printer } from '../output/printer.js';
@@ -63,7 +65,28 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
       printer.info(`Added AI agent skill: ${skill} (.agents/skills/)`);
     }
 
-    // 3. Clear prompt instructions for the developer to hand off to their AI agent
+    // 3. Auto-configure local MCP server for AI Coding Agents (.cursor/mcp.json)
+    try {
+      const cursorDir = path.join(cwd, '.cursor');
+      await fs.mkdir(cursorDir, { recursive: true });
+      const cursorMcpPath = path.join(cursorDir, 'mcp.json');
+
+      let existingMcp: any = { mcpServers: {} };
+      try {
+        existingMcp = JSON.parse(await fs.readFile(cursorMcpPath, 'utf-8'));
+        if (!existingMcp.mcpServers) existingMcp.mcpServers = {};
+      } catch {}
+
+      existingMcp.mcpServers['shallok'] = {
+        command: 'npx',
+        args: ['shallok', 'mcp'],
+      };
+
+      await fs.writeFile(cursorMcpPath, JSON.stringify(existingMcp, null, 2), 'utf-8');
+      printer.info('Configured Shallok MCP server in .cursor/mcp.json');
+    } catch {}
+
+    // 4. Clear prompt instructions for the developer to hand off to their AI agent
     console.log('');
     console.log(chalk.bold.cyan('======================================================================'));
     console.log(chalk.bold(' Next Step: Ask your AI agent to localize your app!'));
@@ -79,6 +102,12 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
     console.log('  2. Extract hardcoded UI strings into canonical catalog (shallok extract)');
     console.log('  3. Generate translations without external API keys (shallok translate)');
     console.log('  4. Wire up framework runtime provider and compile message bundles');
+    console.log('  5. Synchronize with Shallok Dashboard & Edge CDN via Shallok MCP');
+    console.log('');
+    console.log(chalk.bold(' Cloud Sync & Global CDN:'));
+    console.log('  To link your project and publish translations to the Global Edge CDN:');
+    console.log(chalk.green('  npx shallok link --token <shk_live_...>'));
+    console.log(chalk.dim('  (Generate tokens at https://dash.shallok.com/mcp)'));
     console.log(chalk.bold.cyan('======================================================================'));
   } catch (err: any) {
     printer.error(`Setup failed: ${err.message}`);
