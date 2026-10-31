@@ -32,6 +32,9 @@ program
   .command('setup')
   .description('Set up Shallok in project: install devDependency and copy agent skill (For developers only)')
   .option('--framework <name>', 'Override framework detection (react, nextjs, expo, astro)')
+  .option('-y, --yes', 'Non-interactive mode, skip prompts')
+  .option('--cdn', 'Connect to Shallok CDN')
+  .option('--url <url>', 'Shallok Dashboard URL')
   .option('--json', 'Output machine-readable JSON')
   .action(async (options) => {
     const isJson = options.json || program.opts().json;

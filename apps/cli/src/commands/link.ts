@@ -2,6 +2,8 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import { CatalogStorage } from '@shallok/core';
 import { Printer } from '../output/printer.js';
+import { startLocalAuthServer } from '../auth/callback-server.js';
+import { openBrowser } from './setup.js';
 
 export interface LinkOptions {
   project?: string;
@@ -38,6 +40,30 @@ export async function linkCommand(options: LinkOptions): Promise<void> {
           break;
         }
       } catch {}
+    }
+  }
+
+  if (!token) {
+    if (process.stdin.isTTY && !options.json && !process.env.VITEST && process.env.NODE_ENV !== 'test') {
+      try {
+        printer.log('No API token provided. Launching browser to authenticate...');
+        const authServer = await startLocalAuthServer();
+        const loginUrl = `${dashboardUrl}/auth?callback=${encodeURIComponent(authServer.callbackUrl)}&state=${authServer.state}`;
+        openBrowser(loginUrl);
+        printer.info(`Opening ${loginUrl}`);
+        printer.log('Waiting for authentication from browser...');
+        const authRes = await authServer.waitForAuth(180000);
+        token = authRes.token;
+        if (authRes.projectId && !options.project) {
+          options.project = authRes.projectId;
+        }
+        if (authRes.workspace && !options.workspace) {
+          options.workspace = authRes.workspace;
+        }
+        printer.success('Authenticated successfully via browser!');
+      } catch (err: any) {
+        printer.error(`Browser authentication failed: ${err.message}`);
+      }
     }
   }
 

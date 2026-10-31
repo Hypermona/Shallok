@@ -294,5 +294,147 @@ describe('End-to-End Localization Pipeline', () => {
       process.chdir(prevCwd);
     }
   }, 30000);
+
+  it('setupCommand prompts user to connect to Shallok CDN, handles user accepting and continuing back in CLI', async () => {
+    const { setupCommand } = await import('../apps/cli/src/commands/setup.js');
+    const setupDir = path.join(tempDir, 'setup-cdn-yes-project');
+    await fs.mkdir(setupDir, { recursive: true });
+
+    await fs.writeFile(
+      path.join(setupDir, 'package.json'),
+      JSON.stringify({ name: 'react-cdn-app', version: '1.0.0', dependencies: { react: '^18.0.0' } }, null, 2),
+      'utf8'
+    );
+
+    let askCdnCalled = false;
+    let waitForReturnCalled = false;
+
+    const prevCwd = process.cwd();
+    try {
+      process.chdir(setupDir);
+      await setupCommand({
+        promptHandler: {
+          askCdn: async () => {
+            askCdnCalled = true;
+            return true; // User accepts CDN
+          },
+          waitForReturn: async () => {
+            waitForReturnCalled = true;
+            return 'shk_live_sample_token_456'; // User created project and pasted token
+          },
+        },
+      });
+
+      expect(askCdnCalled).toBe(true);
+      expect(waitForReturnCalled).toBe(true);
+
+      // Verify SHALLOK_API_TOKEN was stored in .env.local
+      const envContent = await fs.readFile(path.join(setupDir, '.env.local'), 'utf8');
+      expect(envContent).toContain('SHALLOK_API_TOKEN=shk_live_sample_token_456');
+
+      // Verify skills copied
+      const skillPath = path.join(setupDir, '.agents', 'skills', 'react-localization-and-translation-i18n', 'SKILL.md');
+      expect(await fs.stat(skillPath)).toBeDefined();
+    } finally {
+      process.chdir(prevCwd);
+    }
+  }, 30000);
+
+  it('setupCommand prompts user to connect to Shallok CDN, handles user declining and continuing', async () => {
+    const { setupCommand } = await import('../apps/cli/src/commands/setup.js');
+    const setupDir = path.join(tempDir, 'setup-cdn-no-project');
+    await fs.mkdir(setupDir, { recursive: true });
+
+    await fs.writeFile(
+      path.join(setupDir, 'package.json'),
+      JSON.stringify({ name: 'react-cdn-no-app', version: '1.0.0', dependencies: { react: '^18.0.0' } }, null, 2),
+      'utf8'
+    );
+
+    let askCdnCalled = false;
+    let waitForReturnCalled = false;
+
+    const prevCwd = process.cwd();
+    try {
+      process.chdir(setupDir);
+      await setupCommand({
+        promptHandler: {
+          askCdn: async () => {
+            askCdnCalled = true;
+            return false; // User declines CDN
+          },
+          waitForReturn: async () => {
+            waitForReturnCalled = true;
+            return '';
+          },
+        },
+      });
+
+      expect(askCdnCalled).toBe(true);
+      expect(waitForReturnCalled).toBe(false);
+
+      // Verify .env.local was NOT created
+      let envExists = false;
+      try {
+        await fs.stat(path.join(setupDir, '.env.local'));
+        envExists = true;
+      } catch {
+        envExists = false;
+      }
+      expect(envExists).toBe(false);
+
+      // Verify skills copied and setup finished cleanly
+      const skillPath = path.join(setupDir, '.agents', 'skills', 'react-localization-and-translation-i18n', 'SKILL.md');
+      expect(await fs.stat(skillPath)).toBeDefined();
+    } finally {
+      process.chdir(prevCwd);
+    }
+  }, 30000);
+
+  it('startLocalAuthServer captures token automatically via GET callback URL', async () => {
+    const { startLocalAuthServer } = await import('../apps/cli/src/auth/callback-server.js');
+    const authServer = await startLocalAuthServer();
+
+    expect(authServer.port).toBeGreaterThan(0);
+    expect(authServer.callbackUrl).toContain(`:${authServer.port}/callback`);
+    expect(authServer.state).toBeDefined();
+
+    // Simulate browser redirect back to local callback
+    const resPromise = fetch(
+      `${authServer.callbackUrl}?token=shk_live_browser_token_789&project=my-dash-proj&workspace=acme&state=${authServer.state}`
+    );
+
+    const authResult = await authServer.waitForAuth(5000);
+    expect(authResult.token).toBe('shk_live_browser_token_789');
+    expect(authResult.projectId).toBe('my-dash-proj');
+    expect(authResult.workspace).toBe('acme');
+
+    const res = await resPromise;
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('Authenticated with Shallok');
+  });
+
+  it('startLocalAuthServer captures token automatically via POST callback', async () => {
+    const { startLocalAuthServer } = await import('../apps/cli/src/auth/callback-server.js');
+    const authServer = await startLocalAuthServer();
+
+    // Simulate dashboard POST to local callback
+    const resPromise = fetch(authServer.callbackUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: 'shk_live_post_token_999',
+        projectId: 'post-project',
+      }),
+    });
+
+    const authResult = await authServer.waitForAuth(5000);
+    expect(authResult.token).toBe('shk_live_post_token_999');
+    expect(authResult.projectId).toBe('post-project');
+
+    const res = await resPromise;
+    expect(res.status).toBe(200);
+  });
 });
 
