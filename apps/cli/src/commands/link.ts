@@ -77,8 +77,17 @@ export async function linkCommand(options: LinkOptions): Promise<void> {
     });
 
     if (res.status === 401) {
-      printer.error(`Invalid or expired API token. Please generate a new token at ${dashboardUrl}/mcp`);
-      process.exit(1);
+      if (options.workspace) {
+        printer.warn(`Could not verify token with dashboard (401), but proceeding with explicit workspace "${options.workspace}".`);
+        workspaceSlug = options.workspace;
+      } else {
+        printer.error(
+          `Invalid or expired API token.\n` +
+          `Please generate a new token at ${dashboardUrl}/mcp\n` +
+          `Or provide your workspace explicitly: npx shallok link --workspace <slug>`
+        );
+        process.exit(1);
+      }
     }
 
     if (res.ok) {
