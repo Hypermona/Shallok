@@ -37,6 +37,60 @@ export async function initCommand(options: InitOptions): Promise<void> {
     const frameworkName = (options.framework || analysis.framework.name || 'react') as any;
     const adapter = getAdapter(frameworkName);
 
+    // Resolve cloud configuration from .env.local or environment if available
+    let cloudToken = process.env.SHALLOK_API_TOKEN;
+    let cloudProjectId = process.env.SHALLOK_PROJECT_ID;
+    let cloudWorkspace = process.env.SHALLOK_WORKSPACE;
+
+    if (!cloudToken || !cloudProjectId || !cloudWorkspace) {
+      for (const envFile of ['.env.local', '.env']) {
+        try {
+          const envContent = await fs.readFile(path.join(cwd, envFile), 'utf-8');
+          if (!cloudToken) {
+            const m = envContent.match(/^SHALLOK_API_TOKEN\s*=\s*([^\s#]+)/m);
+            if (m && m[1]) cloudToken = m[1].trim();
+          }
+          if (!cloudProjectId) {
+            const m = envContent.match(/^SHALLOK_PROJECT_ID\s*=\s*([^\s#]+)/m);
+            if (m && m[1]) cloudProjectId = m[1].trim();
+          }
+          if (!cloudWorkspace) {
+            const m = envContent.match(/^SHALLOK_WORKSPACE\s*=\s*([^\s#]+)/m);
+            if (m && m[1]) cloudWorkspace = m[1].trim();
+          }
+        } catch {}
+      }
+    }
+
+    let cloudConfig: LocalizationManifest['cloud'] | undefined = undefined;
+    if (cloudProjectId || cloudToken) {
+      let resolvedProjectId = cloudProjectId;
+      if (!resolvedProjectId) {
+        try {
+          const pkg = JSON.parse(await fs.readFile(path.join(cwd, 'package.json'), 'utf-8'));
+          if (pkg.name) {
+            resolvedProjectId = pkg.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/^@.*\//, '');
+          }
+        } catch {}
+      }
+      if (!resolvedProjectId) {
+        resolvedProjectId = path.basename(cwd).toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+      }
+
+      const dashboardUrl = (process.env.SHALLOK_DASHBOARD_URL || 'https://dash.shallok.com').replace(/\/+$/, '');
+      const cdnBase = cloudWorkspace
+        ? `https://${cloudWorkspace}.shallok.com/${resolvedProjectId}`
+        : `${dashboardUrl}/cdn/${resolvedProjectId}`;
+
+      cloudConfig = {
+        project_id: resolvedProjectId,
+        workspace: cloudWorkspace || undefined,
+        dashboard_url: dashboardUrl,
+        cdn_url: cdnBase,
+        auto_publish: true,
+      };
+    }
+
     const manifest: LocalizationManifest = {
       schema_version: 1,
       localization_version: 1,
@@ -53,6 +107,7 @@ export async function initCommand(options: InitOptions): Promise<void> {
         base_directory: 'localization_base',
         translations_directory: 'messages',
       },
+      ...(cloudConfig ? { cloud: cloudConfig } : {}),
       key_strategy: 'semantic',
       translation: {
         provider: 'mock',
@@ -125,6 +180,12 @@ export async function initCommand(options: InitOptions): Promise<void> {
 
     printer.success('Localization initialized successfully!');
     printer.info(`Created localization.json`);
+    if (manifest.cloud) {
+      printer.info(`Configured Shallok Cloud project: ${manifest.cloud.project_id}`);
+      if (manifest.cloud.cdn_url) {
+        printer.info(`Configured Edge CDN: ${manifest.cloud.cdn_url}`);
+      }
+    }
     printer.info(`Created base directory: ${manifest.paths.base_directory}/`);
     printer.info(`Created messages directory: ${manifest.paths.translations_directory}/`);
     for (const f of adapterResult.createdFiles) {

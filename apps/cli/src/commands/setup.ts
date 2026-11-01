@@ -40,7 +40,16 @@ export function openBrowser(url: string): void {
   }
 }
 
-export async function saveTokenToEnv(projectRoot: string, token: string): Promise<void> {
+export interface CloudCredentials {
+  token: string;
+  projectId?: string;
+  workspace?: string;
+}
+
+export async function saveCredentialsToEnv(
+  projectRoot: string,
+  credentials: CloudCredentials
+): Promise<void> {
   try {
     const envLocalPath = path.join(projectRoot, '.env.local');
     let envContent = '';
@@ -48,18 +57,48 @@ export async function saveTokenToEnv(projectRoot: string, token: string): Promis
       envContent = await fs.readFile(envLocalPath, 'utf-8');
     } catch {}
 
-    if (envContent.includes('SHALLOK_API_TOKEN=')) {
-      envContent = envContent.replace(/^SHALLOK_API_TOKEN=.*$/m, `SHALLOK_API_TOKEN=${token}`);
-      await fs.writeFile(envLocalPath, envContent, 'utf-8');
-    } else {
-      const newline = envContent.length > 0 && !envContent.endsWith('\n') ? '\n' : '';
-      await fs.writeFile(
-        envLocalPath,
-        `${envContent}${newline}# Shallok Cloud API Token\nSHALLOK_API_TOKEN=${token}\n`,
-        'utf-8'
-      );
+    const updateOrAppend = (key: string, val: string) => {
+      if (envContent.includes(`${key}=`)) {
+        envContent = envContent.replace(new RegExp(`^${key}=.*$`, 'm'), `${key}=${val}`);
+      } else {
+        const newline = envContent.length > 0 && !envContent.endsWith('\n') ? '\n' : '';
+        envContent = `${envContent}${newline}${key}=${val}\n`;
+      }
+    };
+
+    updateOrAppend('SHALLOK_API_TOKEN', credentials.token);
+    if (credentials.projectId) {
+      updateOrAppend('SHALLOK_PROJECT_ID', credentials.projectId);
     }
+    if (credentials.workspace) {
+      updateOrAppend('SHALLOK_WORKSPACE', credentials.workspace);
+    }
+
+    await fs.writeFile(envLocalPath, envContent, 'utf-8');
+
+    // Also update localization.json if it already exists
+    try {
+      const manifestPath = path.join(projectRoot, 'localization.json');
+      const manifestRaw = await fs.readFile(manifestPath, 'utf-8');
+      const manifest = JSON.parse(manifestRaw);
+      manifest.cloud = manifest.cloud || {};
+      if (credentials.projectId) manifest.cloud.project_id = credentials.projectId;
+      if (credentials.workspace) manifest.cloud.workspace = credentials.workspace;
+      const dashboardUrl = (process.env.SHALLOK_DASHBOARD_URL || 'https://dash.shallok.com').replace(/\/+$/, '');
+      manifest.cloud.dashboard_url = manifest.cloud.dashboard_url || dashboardUrl;
+      const ws = credentials.workspace || manifest.cloud.workspace;
+      const proj = credentials.projectId || manifest.cloud.project_id;
+      if (ws && proj) {
+        manifest.cloud.cdn_url = `https://${ws}.shallok.com/${proj}`;
+      }
+      manifest.cloud.auto_publish = true;
+      await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
+    } catch {}
   } catch {}
+}
+
+export async function saveTokenToEnv(projectRoot: string, token: string): Promise<void> {
+  await saveCredentialsToEnv(projectRoot, { token });
 }
 
 /**
@@ -153,17 +192,29 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
 
               if (raceResult.type === 'auto') {
                 const autoToken = raceResult.res.token;
+                const autoProject = raceResult.res.projectId;
+                const autoWorkspace = raceResult.res.workspace;
                 if (autoToken) {
-                  await saveTokenToEnv(cwd, autoToken);
+                  await saveCredentialsToEnv(cwd, {
+                    token: autoToken,
+                    projectId: autoProject,
+                    workspace: autoWorkspace,
+                  });
                   savedToken = true;
                   console.log('');
                   printer.success('Received API token automatically from browser!');
                   printer.info('Saved SHALLOK_API_TOKEN to .env.local');
+                  if (autoProject) {
+                    printer.info(`Saved SHALLOK_PROJECT_ID (${autoProject}) to .env.local`);
+                  }
+                  if (autoWorkspace) {
+                    printer.info(`Saved SHALLOK_WORKSPACE (${autoWorkspace}) to .env.local`);
+                  }
                 }
               } else {
                 const trimmed = (raceResult.text || '').trim();
                 if (trimmed) {
-                  await saveTokenToEnv(cwd, trimmed);
+                  await saveCredentialsToEnv(cwd, { token: trimmed });
                   savedToken = true;
                   printer.info('Saved SHALLOK_API_TOKEN to .env.local');
                 }

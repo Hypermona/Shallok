@@ -436,5 +436,53 @@ describe('End-to-End Localization Pipeline', () => {
     const res = await resPromise;
     expect(res.status).toBe(200);
   });
+
+  it('saveCredentialsToEnv stores project ID & workspace, and initCommand automatically embeds cloud into localization.json', async () => {
+    const { saveCredentialsToEnv } = await import('../apps/cli/src/commands/setup.js');
+    const { initCommand } = await import('../apps/cli/src/commands/init.js');
+
+    const testProjectDir = path.join(tempDir, 'init-cloud-project');
+    await fs.mkdir(testProjectDir, { recursive: true });
+
+    await fs.writeFile(
+      path.join(testProjectDir, 'package.json'),
+      JSON.stringify({ name: 'my-awesome-app', version: '1.0.0', dependencies: { react: '^18.0.0' } }, null, 2),
+      'utf8'
+    );
+
+    // Save cloud credentials to .env.local
+    await saveCredentialsToEnv(testProjectDir, {
+      token: 'shk_live_test_token_123',
+      projectId: 'my-cloud-project',
+      workspace: 'acme-corp',
+    });
+
+    const envContent = await fs.readFile(path.join(testProjectDir, '.env.local'), 'utf8');
+    expect(envContent).toContain('SHALLOK_API_TOKEN=shk_live_test_token_123');
+    expect(envContent).toContain('SHALLOK_PROJECT_ID=my-cloud-project');
+    expect(envContent).toContain('SHALLOK_WORKSPACE=acme-corp');
+
+    const prevCwd = process.cwd();
+    try {
+      process.chdir(testProjectDir);
+      await initCommand({
+        source: 'en',
+        locales: 'es,fr',
+        json: true,
+      });
+
+      // Verify localization.json was created with cloud configuration
+      const manifestRaw = await fs.readFile(path.join(testProjectDir, 'localization.json'), 'utf8');
+      const manifest = JSON.parse(manifestRaw);
+
+      expect(manifest.cloud).toBeDefined();
+      expect(manifest.cloud.project_id).toBe('my-cloud-project');
+      expect(manifest.cloud.workspace).toBe('acme-corp');
+      expect(manifest.cloud.cdn_url).toBe('https://acme-corp.shallok.com/my-cloud-project');
+      expect(manifest.cloud.auto_publish).toBe(true);
+    } finally {
+      process.chdir(prevCwd);
+    }
+  });
 });
 
