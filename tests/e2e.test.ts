@@ -437,7 +437,7 @@ describe('End-to-End Localization Pipeline', () => {
     expect(res.status).toBe(200);
   });
 
-  it('saveCredentialsToEnv stores project ID & workspace, and initCommand automatically embeds cloud into localization.json', async () => {
+  it('saveCredentialsToEnv creates localization.json immediately with cloud settings, and initCommand enriches it', async () => {
     const { saveCredentialsToEnv } = await import('../apps/cli/src/commands/setup.js');
     const { initCommand } = await import('../apps/cli/src/commands/init.js');
 
@@ -450,17 +450,27 @@ describe('End-to-End Localization Pipeline', () => {
       'utf8'
     );
 
-    // Save cloud credentials to .env.local
+    // Save cloud credentials
     await saveCredentialsToEnv(testProjectDir, {
       token: 'shk_live_test_token_123',
       projectId: 'my-cloud-project',
       workspace: 'acme-corp',
     });
 
+    // 1. Verify token is saved in .env.local and NOT project ID/workspace
     const envContent = await fs.readFile(path.join(testProjectDir, '.env.local'), 'utf8');
     expect(envContent).toContain('SHALLOK_API_TOKEN=shk_live_test_token_123');
-    expect(envContent).toContain('SHALLOK_PROJECT_ID=my-cloud-project');
-    expect(envContent).toContain('SHALLOK_WORKSPACE=acme-corp');
+    expect(envContent).not.toContain('SHALLOK_PROJECT_ID');
+    expect(envContent).not.toContain('SHALLOK_WORKSPACE');
+
+    // 2. Verify localization.json was created immediately during setup with cloud settings
+    const setupManifestRaw = await fs.readFile(path.join(testProjectDir, 'localization.json'), 'utf8');
+    const setupManifest = JSON.parse(setupManifestRaw);
+    expect(setupManifest.cloud).toBeDefined();
+    expect(setupManifest.cloud.project_id).toBe('my-cloud-project');
+    expect(setupManifest.cloud.workspace).toBe('acme-corp');
+    expect(setupManifest.cloud.cdn_url).toBe('https://acme-corp.shallok.com/my-cloud-project');
+    expect(setupManifest.cloud.auto_publish).toBe(true);
 
     const prevCwd = process.cwd();
     try {
@@ -471,7 +481,7 @@ describe('End-to-End Localization Pipeline', () => {
         json: true,
       });
 
-      // Verify localization.json was created with cloud configuration
+      // 3. Verify initCommand enriched localization.json with locales while preserving cloud configuration
       const manifestRaw = await fs.readFile(path.join(testProjectDir, 'localization.json'), 'utf8');
       const manifest = JSON.parse(manifestRaw);
 
@@ -480,6 +490,7 @@ describe('End-to-End Localization Pipeline', () => {
       expect(manifest.cloud.workspace).toBe('acme-corp');
       expect(manifest.cloud.cdn_url).toBe('https://acme-corp.shallok.com/my-cloud-project');
       expect(manifest.cloud.auto_publish).toBe(true);
+      expect(manifest.supported_locales).toEqual(['en', 'es', 'fr']);
     } finally {
       process.chdir(prevCwd);
     }

@@ -27,73 +27,87 @@ export async function initCommand(options: InitOptions): Promise<void> {
     printer.log('Analyzing project...');
     const analysis = await analyzeProject(cwd);
 
-    const sourceLocale = options.source || analysis.suggestedLocales.source || 'en';
+    const existingManifest = await storage.readManifest();
+
+    const sourceLocale =
+      options.source ||
+      existingManifest?.source_locale ||
+      analysis.suggestedLocales.source ||
+      'en';
+
     const targetLocales = options.locales
       ? options.locales.split(',').map((s) => s.trim().toLowerCase())
-      : analysis.suggestedLocales.targets || ['kn', 'hi'];
+      : existingManifest?.supported_locales && existingManifest.supported_locales.length > 1
+        ? existingManifest.supported_locales.filter((l) => l !== sourceLocale)
+        : analysis.suggestedLocales.targets || ['kn', 'hi'];
 
     const supportedLocales = [...new Set([sourceLocale, ...targetLocales])];
 
-    const frameworkName = (options.framework || analysis.framework.name || 'react') as any;
+    const frameworkName = (options.framework || existingManifest?.framework?.name || analysis.framework.name || 'react') as any;
     const adapter = getAdapter(frameworkName);
 
-    // Resolve cloud configuration from .env.local or environment if available
-    let cloudToken = process.env.SHALLOK_API_TOKEN;
-    let cloudProjectId = process.env.SHALLOK_PROJECT_ID;
-    let cloudWorkspace = process.env.SHALLOK_WORKSPACE;
+    // Resolve cloud configuration:
+    // 1. From existingManifest.cloud if already configured (e.g. during shallok setup)
+    // 2. Fallback to .env.local or process.env
+    let cloudConfig: LocalizationManifest['cloud'] | undefined = existingManifest?.cloud;
 
-    if (!cloudToken || !cloudProjectId || !cloudWorkspace) {
-      for (const envFile of ['.env.local', '.env']) {
-        try {
-          const envContent = await fs.readFile(path.join(cwd, envFile), 'utf-8');
-          if (!cloudToken) {
-            const m = envContent.match(/^SHALLOK_API_TOKEN\s*=\s*([^\s#]+)/m);
-            if (m && m[1]) cloudToken = m[1].trim();
-          }
-          if (!cloudProjectId) {
-            const m = envContent.match(/^SHALLOK_PROJECT_ID\s*=\s*([^\s#]+)/m);
-            if (m && m[1]) cloudProjectId = m[1].trim();
-          }
-          if (!cloudWorkspace) {
-            const m = envContent.match(/^SHALLOK_WORKSPACE\s*=\s*([^\s#]+)/m);
-            if (m && m[1]) cloudWorkspace = m[1].trim();
-          }
-        } catch {}
-      }
-    }
+    if (!cloudConfig || !cloudConfig.project_id) {
+      let cloudToken = process.env.SHALLOK_API_TOKEN;
+      let cloudProjectId = process.env.SHALLOK_PROJECT_ID;
+      let cloudWorkspace = process.env.SHALLOK_WORKSPACE;
 
-    let cloudConfig: LocalizationManifest['cloud'] | undefined = undefined;
-    if (cloudProjectId || cloudToken) {
-      let resolvedProjectId = cloudProjectId;
-      if (!resolvedProjectId) {
-        try {
-          const pkg = JSON.parse(await fs.readFile(path.join(cwd, 'package.json'), 'utf-8'));
-          if (pkg.name) {
-            resolvedProjectId = pkg.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/^@.*\//, '');
-          }
-        } catch {}
-      }
-      if (!resolvedProjectId) {
-        resolvedProjectId = path.basename(cwd).toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+      if (!cloudToken || !cloudProjectId || !cloudWorkspace) {
+        for (const envFile of ['.env.local', '.env']) {
+          try {
+            const envContent = await fs.readFile(path.join(cwd, envFile), 'utf-8');
+            if (!cloudToken) {
+              const m = envContent.match(/^SHALLOK_API_TOKEN\s*=\s*([^\s#]+)/m);
+              if (m && m[1]) cloudToken = m[1].trim();
+            }
+            if (!cloudProjectId) {
+              const m = envContent.match(/^SHALLOK_PROJECT_ID\s*=\s*([^\s#]+)/m);
+              if (m && m[1]) cloudProjectId = m[1].trim();
+            }
+            if (!cloudWorkspace) {
+              const m = envContent.match(/^SHALLOK_WORKSPACE\s*=\s*([^\s#]+)/m);
+              if (m && m[1]) cloudWorkspace = m[1].trim();
+            }
+          } catch {}
+        }
       }
 
-      const dashboardUrl = (process.env.SHALLOK_DASHBOARD_URL || 'https://dash.shallok.com').replace(/\/+$/, '');
-      const cdnBase = cloudWorkspace
-        ? `https://${cloudWorkspace}.shallok.com/${resolvedProjectId}`
-        : `${dashboardUrl}/cdn/${resolvedProjectId}`;
+      if (cloudProjectId || cloudToken) {
+        let resolvedProjectId = cloudProjectId;
+        if (!resolvedProjectId) {
+          try {
+            const pkg = JSON.parse(await fs.readFile(path.join(cwd, 'package.json'), 'utf-8'));
+            if (pkg.name) {
+              resolvedProjectId = pkg.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/^@.*\//, '');
+            }
+          } catch {}
+        }
+        if (!resolvedProjectId) {
+          resolvedProjectId = path.basename(cwd).toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+        }
 
-      cloudConfig = {
-        project_id: resolvedProjectId,
-        workspace: cloudWorkspace || undefined,
-        dashboard_url: dashboardUrl,
-        cdn_url: cdnBase,
-        auto_publish: true,
-      };
+        const dashboardUrl = (process.env.SHALLOK_DASHBOARD_URL || 'https://dash.shallok.com').replace(/\/+$/, '');
+        const cdnBase = cloudWorkspace
+          ? `https://${cloudWorkspace}.shallok.com/${resolvedProjectId}`
+          : `${dashboardUrl}/cdn/${resolvedProjectId}`;
+
+        cloudConfig = {
+          project_id: resolvedProjectId,
+          workspace: cloudWorkspace || undefined,
+          dashboard_url: dashboardUrl,
+          cdn_url: cdnBase,
+          auto_publish: true,
+        };
+      }
     }
 
     const manifest: LocalizationManifest = {
-      schema_version: 1,
-      localization_version: 1,
+      schema_version: existingManifest?.schema_version ?? 1,
+      localization_version: existingManifest?.localization_version ?? 1,
       source_locale: sourceLocale,
       supported_locales: supportedLocales,
       framework: {
@@ -103,18 +117,18 @@ export async function initCommand(options: InitOptions): Promise<void> {
         library_version: analysis.framework.library_version,
       },
       paths: {
-        source_directories: analysis.sourceDirectories.length > 0 ? analysis.sourceDirectories : ['src'],
-        base_directory: 'localization_base',
-        translations_directory: 'messages',
+        source_directories: analysis.sourceDirectories.length > 0 ? analysis.sourceDirectories : (existingManifest?.paths?.source_directories || ['src']),
+        base_directory: existingManifest?.paths?.base_directory || 'localization_base',
+        translations_directory: existingManifest?.paths?.translations_directory || 'messages',
       },
       ...(cloudConfig ? { cloud: cloudConfig } : {}),
-      key_strategy: 'semantic',
-      translation: {
+      key_strategy: existingManifest?.key_strategy || 'semantic',
+      translation: existingManifest?.translation || {
         provider: 'mock',
         model: null,
         batch_size: 25,
       },
-      options: {
+      options: existingManifest?.options || {
         include_accessibility_text: true,
         preserve_obsolete_keys: true,
         require_review_for_ambiguous_strings: true,
@@ -179,7 +193,11 @@ export async function initCommand(options: InitOptions): Promise<void> {
     }
 
     printer.success('Localization initialized successfully!');
-    printer.info(`Created localization.json`);
+    if (existingManifest) {
+      printer.info(`Updated localization.json with configured locales (${supportedLocales.join(', ')})`);
+    } else {
+      printer.info(`Created localization.json`);
+    }
     if (manifest.cloud) {
       printer.info(`Configured Shallok Cloud project: ${manifest.cloud.project_id}`);
       if (manifest.cloud.cdn_url) {

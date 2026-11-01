@@ -24,7 +24,7 @@ function resolveCliVersion(): string {
     // fallback if file cannot be read
   }
 
-  return '0.2.1';
+  return '0.2.2';
 }
 
 export const CLI_VERSION = resolveCliVersion();
