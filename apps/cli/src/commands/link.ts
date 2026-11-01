@@ -43,6 +43,7 @@ export async function linkCommand(options: LinkOptions): Promise<void> {
     }
   }
 
+  let authRes: any = null;
   if (!token) {
     if (!options.json && !process.env.CI && !process.env.VITEST && process.env.NODE_ENV !== 'test') {
       try {
@@ -52,7 +53,7 @@ export async function linkCommand(options: LinkOptions): Promise<void> {
         openBrowser(loginUrl);
         printer.info(`Opening ${loginUrl}`);
         printer.log('Waiting for authentication from browser...');
-        const authRes = await authServer.waitForAuth(180000);
+        authRes = await authServer.waitForAuth(180000);
         token = authRes.token;
         if (authRes.projectId && !options.project) {
           options.project = authRes.projectId;
@@ -141,6 +142,15 @@ export async function linkCommand(options: LinkOptions): Promise<void> {
     cdn_url: cdnBase,
     auto_publish: true,
   };
+
+  if (authRes?.sourceLocale) {
+    manifest.source_locale = authRes.sourceLocale;
+  }
+  if (authRes?.locales && authRes.locales.length > 0) {
+    manifest.supported_locales = Array.from(
+      new Set([manifest.source_locale, ...authRes.locales])
+    );
+  }
 
   await storage.writeManifest(manifest);
 

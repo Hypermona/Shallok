@@ -48,7 +48,31 @@ export function openBrowser(url: string): void {
 export interface CloudCredentials {
   token: string;
   projectId?: string;
+  slug?: string;
+  projectName?: string;
   workspace?: string;
+  sourceLocale?: string;
+  locales?: string[];
+}
+
+export function isRunningInsideAgent(): boolean {
+  return Boolean(
+    process.env.ANTIGRAVITY_AGENT ||
+    process.env.ANTIGRAVITY ||
+    process.env.CURSOR_AGENT ||
+    process.env.CURSOR_WORKSPACE_DIR ||
+    process.env.CLAUDE_CODE ||
+    process.env.CLAUDECODE ||
+    process.env.WINDSURF ||
+    process.env.CASCADE ||
+    process.env.AI_AGENT ||
+    process.env.AGENT ||
+    process.env.CODING_AGENT ||
+    process.env.ROO_CODE ||
+    process.env.CLINE_RUN ||
+    process.env.AIDER ||
+    process.env.CONTINUE_GLOBAL_DIR
+  );
 }
 
 export async function updateOrCreateManifestWithCloud(
@@ -62,7 +86,7 @@ export async function updateOrCreateManifestWithCloud(
       existingManifest = await storage.readManifest();
     } catch {}
 
-    let resolvedProjectId = credentials.projectId || existingManifest?.cloud?.project_id;
+    let resolvedProjectId = credentials.projectId || credentials.slug || existingManifest?.cloud?.project_id;
     if (!resolvedProjectId) {
       try {
         const pkg = JSON.parse(await fs.readFile(path.join(projectRoot, 'package.json'), 'utf-8'));
@@ -91,6 +115,14 @@ export async function updateOrCreateManifestWithCloud(
 
     if (existingManifest) {
       existingManifest.cloud = cloudConfig;
+      if (credentials.sourceLocale) {
+        existingManifest.source_locale = credentials.sourceLocale;
+      }
+      if (credentials.locales && credentials.locales.length > 0) {
+        existingManifest.supported_locales = Array.from(
+          new Set([existingManifest.source_locale, ...credentials.locales])
+        );
+      }
       await storage.writeManifest(existingManifest);
       return existingManifest;
     }
@@ -115,12 +147,19 @@ export async function updateOrCreateManifestWithCloud(
       adapter = { library: null };
     }
 
-    const sourceLocale = analysis.suggestedLocales?.source || 'en';
+    const sourceLocale = credentials.sourceLocale || analysis.suggestedLocales?.source || 'en';
+    let supportedLocales: string[] = [sourceLocale];
+    if (credentials.locales && credentials.locales.length > 0) {
+      supportedLocales = Array.from(new Set([sourceLocale, ...credentials.locales]));
+    } else if (analysis.suggestedLocales?.targets) {
+      supportedLocales = Array.from(new Set([sourceLocale, ...analysis.suggestedLocales.targets]));
+    }
+
     const manifest: LocalizationManifest = {
       schema_version: 1,
       localization_version: 1,
       source_locale: sourceLocale,
-      supported_locales: [sourceLocale],
+      supported_locales: supportedLocales,
       framework: {
         name: frameworkName,
         router: analysis.framework?.router ?? null,
@@ -219,6 +258,7 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
 
     let connectedToCdn = false;
     let savedToken = false;
+    let connectedCredentials: CloudCredentials | null = null;
 
     if (options.cdn !== undefined) {
       connectedToCdn = Boolean(options.cdn);
@@ -280,21 +320,30 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
                 const autoProject = raceResult.res.projectId;
                 const autoWorkspace = raceResult.res.workspace;
                 if (autoToken) {
-                  await saveCredentialsToEnv(cwd, {
+                  connectedCredentials = {
                     token: autoToken,
                     projectId: autoProject,
+                    slug: raceResult.res.slug || autoProject,
+                    projectName: raceResult.res.projectName,
                     workspace: autoWorkspace,
-                  });
+                    sourceLocale: raceResult.res.sourceLocale,
+                    locales: raceResult.res.locales,
+                  };
+                  await saveCredentialsToEnv(cwd, connectedCredentials);
                   savedToken = true;
                   console.log('');
                   printer.success('Received API token automatically from browser!');
                   printer.info('Saved SHALLOK_API_TOKEN to .env.local');
-                  printer.info(`Configured Shallok CDN in localization.json (Project: ${autoProject || 'default'})`);
+                  const langsText = (connectedCredentials.locales && connectedCredentials.locales.length > 0)
+                    ? connectedCredentials.locales.join(', ')
+                    : 'default';
+                  printer.info(`Configured Shallok CDN in localization.json (Project: ${autoProject || 'default'}, Languages: ${langsText})`);
                 }
               } else {
                 const trimmed = (raceResult.text || '').trim();
                 if (trimmed) {
-                  await saveCredentialsToEnv(cwd, { token: trimmed });
+                  connectedCredentials = { token: trimmed };
+                  await saveCredentialsToEnv(cwd, connectedCredentials);
                   savedToken = true;
                   printer.info('Saved SHALLOK_API_TOKEN to .env.local');
                 }
@@ -346,6 +395,45 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
     // 2. Install shallok devDependency and copy the appropriate agent skill
     const result = await installSkillsForProject(cwd, framework);
 
+    // Resolve configured locales and agent instructions
+    const storage = new CatalogStorage(cwd);
+    let finalManifest: LocalizationManifest | null = null;
+    try {
+      finalManifest = await storage.readManifest();
+    } catch {}
+
+    const sourceLocale =
+      connectedCredentials?.sourceLocale || finalManifest?.source_locale || 'en';
+    const resolvedLocales = (connectedCredentials?.locales && connectedCredentials.locales.length > 0)
+      ? connectedCredentials.locales
+      : (finalManifest?.supported_locales && finalManifest.supported_locales.length > 0)
+        ? finalManifest.supported_locales
+        : [sourceLocale];
+    const uniqueLocales = Array.from(new Set(resolvedLocales));
+    const targetLocales = uniqueLocales.filter(
+      (loc) => loc.trim().toLowerCase() !== sourceLocale.trim().toLowerCase()
+    );
+    const hasTargetLocales = targetLocales.length > 0;
+    const isInsideAgent = isRunningInsideAgent();
+
+    // Human copy-paste message:
+    // If target languages exist in cloud project / localization.json, agent refers directly to localization.json.
+    // If user has only one language mentioned that is also the default language, ask user to mention target languages.
+    let humanAgentMessage: string;
+    if (hasTargetLocales) {
+      humanAgentMessage = connectedToCdn
+        ? 'Add localization and translations, refer to localization.json and push to shallok cdn'
+        : 'Add localization and translations, refer to localization.json';
+    } else {
+      humanAgentMessage = connectedToCdn
+        ? 'Add localization and translations for <mention languages, e.g. es, de, fr>, refer to localization.json and push to shallok cdn'
+        : 'Add localization and translations for <mention languages, e.g. es, de, fr>, refer to localization.json';
+    }
+
+    const agentDirectInstruction = hasTargetLocales
+      ? 'agents: directly start localization and translation by refering skills and localization.json'
+      : 'agents: ask user for target languages to localize, or refer to skills and localization.json if languages are provided';
+
     if (options.json) {
       printer.json({
         success: true,
@@ -356,8 +444,13 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
         destinations: result.destinations,
         cdnConnected: connectedToCdn,
         tokenSaved: savedToken,
-        instructionForAiAgent:
-          'Ask your AI coding agent: "Add localization and translations for a, b, c, d languages" (e.g. en, es, hi, kn)',
+        projectId: connectedCredentials?.projectId || finalManifest?.cloud?.project_id,
+        workspace: connectedCredentials?.workspace || finalManifest?.cloud?.workspace,
+        sourceLocale: connectedCredentials?.sourceLocale || finalManifest?.source_locale || 'en',
+        locales: resolvedLocales,
+        isInsideAgent,
+        agentInstruction: agentDirectInstruction,
+        instructionForAiAgent: humanAgentMessage,
       });
       return;
     }
@@ -396,33 +489,33 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
       printer.info('Configured Shallok MCP server in .cursor/mcp.json');
     } catch {}
 
-    // 4. Clear prompt instructions for the developer to hand off to their AI agent
+    // 4. Clear instructions for the developer and AI coding agent
     console.log('');
     console.log(chalk.bold.cyan('======================================================================'));
-    console.log(chalk.bold(' Next Step: Ask your AI agent to localize your app!'));
+    console.log(chalk.bold(' Next Step: Localize your app with Shallok!'));
     console.log(chalk.bold.cyan('======================================================================'));
-    console.log('Now open your AI coding agent (Antigravity, Cursor, Claude Code, Copilot, etc.)');
-    console.log('and tell it:');
-    console.log('');
-    console.log(chalk.green.bold('  "Add localization and translations for a, b, c, d languages"'));
-    console.log(chalk.dim('  (e.g., "Add localization and translations for en, es, hi, kn")'));
-    console.log('');
     console.log('Your AI agent will use the installed skill to:');
     console.log('  1. Initialize configuration and catalogs (shallok init)');
     console.log('  2. Extract hardcoded UI strings into canonical catalog (shallok extract)');
     console.log('  3. Generate translations without external API keys (shallok translate)');
     console.log('  4. Wire up framework runtime provider and compile message bundles');
-    console.log('  5. Synchronize with Shallok Dashboard & Edge CDN via Shallok MCP');
-    console.log('');
-    console.log(chalk.bold(' Cloud Sync & Global CDN:'));
     if (connectedToCdn) {
-      console.log('  Once your AI agent completes translations, publish to Edge CDN:');
-      console.log(chalk.green('  npx shallok push'));
-    } else {
-      console.log('  To link your project and publish translations to the Global Edge CDN:');
-      console.log(chalk.green('  npx shallok link --token <shk_live_...>'));
-      console.log(chalk.dim('  (Generate tokens at https://dash.shallok.com/mcp)'));
+      console.log('  5. Publish localized bundles to Global Shallok Edge CDN (shallok push)');
     }
+    console.log('');
+
+    // If running inside a coding agent, include direct agent instruction ABOVE human messages
+    if (isInsideAgent) {
+      console.log(chalk.yellow.bold('🤖 Agents:'));
+      console.log(chalk.yellow.bold(`  ${agentDirectInstruction}`));
+      console.log('');
+    }
+
+    // ALWAYS AT THE VERY LAST of the setup finish message:
+    console.log(chalk.bold('📋 Tell your AI coding agent (copy and paste):'));
+    console.log('');
+    console.log(chalk.green.bold(`  "${humanAgentMessage}"`));
+    console.log('');
     console.log(chalk.bold.cyan('======================================================================'));
   } catch (err: any) {
     printer.error(`Setup failed: ${err.message}`);

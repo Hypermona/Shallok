@@ -5,7 +5,11 @@ import { AddressInfo } from 'node:net';
 export interface AuthResult {
   token: string;
   projectId?: string;
+  slug?: string;
+  projectName?: string;
   workspace?: string;
+  sourceLocale?: string;
+  locales?: string[];
 }
 
 export interface LocalAuthServer {
@@ -45,7 +49,17 @@ export async function startLocalAuthServer(): Promise<LocalAuthServer> {
     const reqUrl = new URL(req.url || '/', `http://${host}`);
 
     if (reqUrl.pathname === '/callback' || reqUrl.pathname === '/') {
-      const finishWithToken = (token: string, projectId?: string, workspace?: string) => {
+      const finishWithToken = (
+        token: string,
+        projectId?: string,
+        workspace?: string,
+        extra?: {
+          slug?: string;
+          projectName?: string;
+          sourceLocale?: string;
+          locales?: string[];
+        }
+      ) => {
         const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -117,9 +131,20 @@ export async function startLocalAuthServer(): Promise<LocalAuthServer> {
       const hashToken = hashParams.get('token') || hashParams.get('access_token') || hashParams.get('api_token');
       const hashState = hashParams.get('state');
       const hashProj = hashParams.get('project') || hashParams.get('projectId');
+      const hashSlug = hashParams.get('slug');
       const hashWs = hashParams.get('workspace');
+      const hashName = hashParams.get('projectName') || hashParams.get('name');
+      const hashSrc = hashParams.get('sourceLocale') || hashParams.get('defaultLanguage') || hashParams.get('defaultLocale');
+      const hashLocs = hashParams.get('locales') || hashParams.get('languages');
       if (hashToken) {
-        fetch('/callback?token=' + encodeURIComponent(hashToken) + '&state=' + encodeURIComponent(hashState || '') + (hashProj ? '&project=' + encodeURIComponent(hashProj) : '') + (hashWs ? '&workspace=' + encodeURIComponent(hashWs) : ''));
+        let q = '/callback?token=' + encodeURIComponent(hashToken) + '&state=' + encodeURIComponent(hashState || '') +
+          (hashProj ? '&project=' + encodeURIComponent(hashProj) : '') +
+          (hashSlug ? '&slug=' + encodeURIComponent(hashSlug) : '') +
+          (hashWs ? '&workspace=' + encodeURIComponent(hashWs) : '') +
+          (hashName ? '&projectName=' + encodeURIComponent(hashName) : '') +
+          (hashSrc ? '&sourceLocale=' + encodeURIComponent(hashSrc) : '') +
+          (hashLocs ? '&locales=' + encodeURIComponent(hashLocs) : '');
+        fetch(q);
       }
     }
   </script>
@@ -140,8 +165,12 @@ export async function startLocalAuthServer(): Promise<LocalAuthServer> {
         if (authResolver && token) {
           authResolver({
             token,
-            projectId: projectId || undefined,
+            projectId: projectId || extra?.slug || undefined,
+            slug: extra?.slug || projectId || undefined,
+            projectName: extra?.projectName || undefined,
             workspace: workspace || undefined,
+            sourceLocale: extra?.sourceLocale || undefined,
+            locales: extra?.locales || undefined,
           });
           authResolver = null;
         }
@@ -158,16 +187,48 @@ export async function startLocalAuthServer(): Promise<LocalAuthServer> {
         reqUrl.searchParams.get('project') ||
         reqUrl.searchParams.get('projectId') ||
         reqUrl.searchParams.get('project_id') ||
+        reqUrl.searchParams.get('slug') ||
+        undefined;
+
+      const slug =
+        reqUrl.searchParams.get('slug') ||
+        reqUrl.searchParams.get('project') ||
+        undefined;
+
+      const projectName =
+        reqUrl.searchParams.get('projectName') ||
+        reqUrl.searchParams.get('project_name') ||
+        reqUrl.searchParams.get('name') ||
         undefined;
 
       const workspace =
         reqUrl.searchParams.get('workspace') ||
         reqUrl.searchParams.get('workspaceSlug') ||
-        reqUrl.searchParams.get('slug') ||
         undefined;
 
+      const sourceLocale =
+        reqUrl.searchParams.get('sourceLocale') ||
+        reqUrl.searchParams.get('source_locale') ||
+        reqUrl.searchParams.get('defaultLanguage') ||
+        reqUrl.searchParams.get('defaultLocale') ||
+        undefined;
+
+      const localesRaw =
+        reqUrl.searchParams.get('locales') ||
+        reqUrl.searchParams.get('languages') ||
+        undefined;
+
+      const locales = localesRaw
+        ? localesRaw.split(',').map((s) => s.trim()).filter(Boolean)
+        : undefined;
+
       if (token) {
-        finishWithToken(token, projectId, workspace);
+        finishWithToken(token, projectId, workspace, {
+          slug,
+          projectName,
+          sourceLocale,
+          locales,
+        });
         return;
       }
 
@@ -182,7 +243,17 @@ export async function startLocalAuthServer(): Promise<LocalAuthServer> {
             const data = JSON.parse(body);
             const postToken = data.token || data.api_token || data.apiKey || data.access_token;
             if (postToken) {
-              finishWithToken(postToken, data.project || data.projectId, data.workspace);
+              const postLocales = Array.isArray(data.locales)
+                ? data.locales
+                : typeof data.locales === 'string'
+                  ? data.locales.split(',').map((s: string) => s.trim()).filter(Boolean)
+                  : undefined;
+              finishWithToken(postToken, data.project || data.projectId, data.workspace, {
+                slug: data.slug || data.project,
+                projectName: data.projectName || data.name,
+                sourceLocale: data.sourceLocale || data.defaultLanguage,
+                locales: postLocales,
+              });
               return;
             }
           } catch {}
