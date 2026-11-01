@@ -87,11 +87,11 @@ export async function setupCommand(options: SetupOptions): Promise<void> {
 
     const framework = options.framework || detectedFramework;
 
-    // Check if running interactively
+    // Check if running interactively (prompt unless in CI, automated test, or explicit non-interactive mode)
     const isInteractive =
       !options.json &&
       !options.yes &&
-      Boolean(options.promptHandler || (process.stdin.isTTY && !process.env.VITEST && process.env.NODE_ENV !== 'test'));
+      Boolean(options.promptHandler || (!process.env.CI && !process.env.VITEST && process.env.NODE_ENV !== 'test'));
 
     let connectedToCdn = false;
     let savedToken = false;

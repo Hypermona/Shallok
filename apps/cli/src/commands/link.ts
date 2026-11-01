@@ -44,7 +44,7 @@ export async function linkCommand(options: LinkOptions): Promise<void> {
   }
 
   if (!token) {
-    if (process.stdin.isTTY && !options.json && !process.env.VITEST && process.env.NODE_ENV !== 'test') {
+    if (!options.json && !process.env.CI && !process.env.VITEST && process.env.NODE_ENV !== 'test') {
       try {
         printer.log('No API token provided. Launching browser to authenticate...');
         const authServer = await startLocalAuthServer();
