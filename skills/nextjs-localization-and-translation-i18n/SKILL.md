@@ -99,6 +99,18 @@ Use this skill when asked to add, configure, update, or audit localization in **
     - **Zero build or render failures**: Builds do not depend on external CDN uptime or network requests.
     - **Optimal bundling**: Next.js automatically tree-shakes and splits locale chunks.
 
+### Rule 7: Dynamic Language Switcher in Next.js via `getSupportedLocales` API
+When building a `<LocaleSwitcher />` component in Next.js (Client Component):
+- **Dynamic discovery**: A project may contain 10 translation files, but only expose 5 enabled languages in the frontend.
+- **Fetch supported locales dynamically**:
+  - Edge endpoint: `https://<workspace>.shallok.com/<projectId>/supported-locales.json`
+  - Returns `{ isLocked: boolean, locales: [{ locale_code, label, label_en }, ...] }`
+  - Renders native label (`locale.label`, e.g. "日本語", "हिन्दी") as the dropdown option text.
+- **Lock / Unlock Lifecycle**:
+  - **Locked (Default)**: Refers to project settings `locales`.
+  - **Unlocked (Custom Override)**: Reflects user-chosen subset (e.g. 5 of 10) configured in Shallok Dashboard or via `PATCH /api/projects/:id/supported-locales`.
+  - **Re-locking**: When locked again, it automatically refers back to project settings locales.
+
 ---
 
 ## Architecture & Agent Role

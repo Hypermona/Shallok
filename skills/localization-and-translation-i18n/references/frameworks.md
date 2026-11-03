@@ -61,3 +61,17 @@
 ### 5. Vue (`vue-i18n`)
 - **Initialization**: Generates `src/i18n.ts` using `createI18n`.
 - **Runtime Messages**: Generates runtime message files in `messages/runtime/<locale>.json`.
+
+---
+
+## Dynamic Supported Locales (`getSupportedLocales` API)
+
+For all frameworks, downstream client language switchers should dynamically discover active locales using the `getSupportedLocales` edge API:
+
+- **Endpoint**: `https://<workspace>.shallok.com/<projectId>/supported-locales.json`
+- **Output**: Array of `{ locale_code, label, label_en }`
+- **Lock / Unlock Mechanism**:
+  - **Locked (Default)**: Follows project settings (`locales`).
+  - **Unlocked**: Allows modifying the active exposed locales (e.g. expose only 5 of 10 uploaded translations).
+  - **Re-locking**: Automatically reverts to referring to project settings.
+

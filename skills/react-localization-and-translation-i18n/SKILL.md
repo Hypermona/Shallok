@@ -113,6 +113,55 @@ Use this skill when asked to add, configure, update, or audit localization in **
 - **Upload Script**:
   - Suggest / scaffold an upload script (e.g., `scripts/upload-locales.mjs`) to publish compiled `messages/runtime/` dictionaries to the CDN.
 
+### Rule 7: Dynamic Language Switcher via `getSupportedLocales` API
+When building a language switcher or locale selector in React:
+- **Do not hardcode languages**: A user may have uploaded translations for 10 languages, but only want to expose 5 active languages in the frontend.
+- **Fetch supported locales dynamically**:
+  ```tsx
+  // src/components/LanguageSwitcher.tsx
+  import React, { useEffect, useState } from 'react';
+  import { useTranslation } from 'react-i18next';
+
+  interface SupportedLocale {
+    locale_code: string;
+    label: string;     // Native script: e.g. "日本語", "हिन्दी", "English"
+    label_en: string;  // English name: e.g. "Japanese", "Hindi", "English"
+  }
+
+  export function LanguageSwitcher({ projectId, tenantDomain }: { projectId: string; tenantDomain: string }) {
+    const { i18n } = useTranslation();
+    const [locales, setLocales] = useState<SupportedLocale[]>([]);
+
+    useEffect(() => {
+      fetch(`https://${tenantDomain}/${projectId}/supported-locales.json`)
+        .then((res) => res.json())
+        .then((data) => setLocales(data.locales || data))
+        .catch(() => {
+          // Fallback to local default locales if offline
+          setLocales([{ locale_code: 'en', label: 'English', label_en: 'English' }]);
+        });
+    }, [projectId, tenantDomain]);
+
+    return (
+      <select
+        value={i18n.language}
+        onChange={(e) => i18n.changeLanguage(e.target.value)}
+        className="px-2 py-1 rounded border border-gray-300 text-sm"
+      >
+        {locales.map((loc) => (
+          <option key={loc.locale_code} value={loc.locale_code}>
+            {loc.label} ({loc.label_en})
+          </option>
+        ))}
+      </select>
+    );
+  }
+  ```
+- **Lock / Unlock Behavior**:
+  - **Locked (Default)**: Derives dynamically from project settings `locales`.
+  - **Unlocked (Custom Override)**: The user can unlock and customize which locales appear in the dropdown (e.g. show only 5 of 10) in Shallok Dashboard settings or via `PATCH /api/projects/:id/supported-locales`.
+  - **Re-locking**: When locked again, it automatically reflects project settings locales.
+
 ---
 
 ## Architecture & Agent Role

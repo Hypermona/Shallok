@@ -113,6 +113,20 @@ Use this skill when asked to add, configure, update, or audit localization in **
 - **Upload Script**:
   - Suggest / scaffold an upload script (e.g., `scripts/upload-locales.mjs`) to automate publishing compiled `messages/runtime/` dictionaries to the CDN.
 
+### Rule 7: Dynamic Mobile Language Picker via `getSupportedLocales` API
+When building a mobile language selection screen or modal in Expo / React Native:
+- **Do not hardcode languages**: A user may have uploaded translations for 10 languages, but only want to show 5 languages in the mobile app.
+- **Fetch supported locales dynamically**:
+  ```tsx
+  // Query https://<workspace>.shallok.com/<projectId>/supported-locales.json
+  // Returns: { isLocked: boolean, locales: [{ locale_code: 'en', label: 'English', label_en: 'English' }, ...] }
+  ```
+- **Display native script**: Render `item.label` (e.g., "日本語", "हिन्दी") for clear user recognition, with `item.label_en` as subtitle.
+- **Lock / Unlock Lifecycle**:
+  - **Locked (Default)**: Follows project settings locales.
+  - **Unlocked (Custom Override)**: Reflects user-chosen subset (e.g. 5 of 10) customized in Shallok Dashboard or via `PATCH /api/projects/:id/supported-locales`.
+  - **Re-locking**: When locked again, it reverts to project settings locales.
+
 ---
 
 ## Architecture & Agent Role

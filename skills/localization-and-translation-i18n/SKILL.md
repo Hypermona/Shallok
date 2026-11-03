@@ -118,6 +118,37 @@ Choose the loading strategy based on application architecture:
     - For React / Vite: `VITE_TRANSLATIONS_CDN_URL=https://cdn.yourdomain.com/locales`
   - **Upload Script**: Provide an upload script (e.g. `scripts/upload-locales.mjs`) to upload compiled `messages/runtime/` bundles to the CDN.
 
+### Rule 7: Dynamic Supported Locales Discovery (`getSupportedLocales` API)
+- **Problem Solved**: A project may contain 10 (or more) uploaded translations in Shallok Cloud / D1, but the product or release team only wants to show a subset (e.g. 5 languages) in client language switchers (phased launch, tier rollouts, or unreleased draft testing).
+- **The API Contract (`getSupportedLocales`)**:
+  - Edge Endpoint: `GET https://<workspace>.shallok.com/<projectId>/supported-locales.json` (Edge CDN, cached with `s-maxage=3600`)
+  - Direct Dashboard API: `GET /api/projects/:projectId/supported-locales`
+  - Returns:
+    ```json
+    {
+      "projectId": "shallok-store-web",
+      "isLocked": true,
+      "locales": [
+        { "locale_code": "en", "label": "English", "label_en": "English" },
+        { "locale_code": "ja", "label": "日本語", "label_en": "Japanese" },
+        { "locale_code": "hi", "label": "हिन्दी", "label_en": "Hindi" },
+        { "locale_code": "de", "label": "Deutsch", "label_en": "German" },
+        { "locale_code": "es", "label": "Español", "label_en": "Spanish" }
+      ]
+    }
+    ```
+    *(Passing `?format=array` returns just the array of `{ locale_code, label, label_en }`)*
+- **Lock / Unlock Lifecycle (How It Works)**:
+  - **Default (Locked to Project Settings)**: By default, `isLocked` is `true`. The API automatically derives and returns the locales configured in the project settings (`projects.locales`).
+  - **Custom Override (Unlocked)**: The user can unlock (`isLocked: false`) and modify the supported locales list (and their display labels) in Shallok Dashboard settings or via `PATCH /api/projects/:id/supported-locales`. Clients querying `getSupportedLocales` will then receive only the custom subset (e.g. 5 of 10 languages).
+  - **Re-locking**: When the user re-locks (`isLocked: true`), the API instantly reverts to referring directly to the project settings locales.
+- **Agent Guidelines for Client UI / Language Switchers**:
+  - When creating or updating a `<LanguageSwitcher />` component (in React, Next.js, Expo, Astro, etc.):
+    - Fetch the dynamic supported locales from `https://<workspace>.shallok.com/<projectId>/supported-locales.json`.
+    - Render native script labels (`locale.label`, e.g. "日本語", "हिन्दी") as the primary display text with `locale.label_en` as secondary text/tooltip.
+    - Handle locale switching using `locale.locale_code`.
+    - Provide a safe local fallback to `localization.json`'s `supported_locales` when offline or during initial server render.
+
 ---
 
 ## Architecture & Agent Role
