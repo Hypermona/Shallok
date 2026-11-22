@@ -296,3 +296,52 @@ Once runtime bundles are compiled and validated:
      npx shallok link --token <shk_live_...>
      ```
      > *(Generate an access token at https://dash.shallok.com/mcp)*
+
+---
+
+## Rule 8: Media & Asset Localization Workflow
+
+Shallok supports localized images, banners, and documents across all target languages with automatic fallbacks:
+
+### 1. Discovering Media Assets
+- AI agents inspect localized media assets in the project:
+  ```bash
+  shallok media list
+  ```
+  Or fetch `GET /api/projects/:projectId/media` from Shallok Dashboard.
+
+### 2. Generating Media Variants
+- AI agents generate localized media variants for an asset key:
+  ```bash
+  shallok media generate <assetKey> --locales <es,de,fr> --prompt "<custom_guidance_max_100_chars>"
+  ```
+  Or via MCP: invoke `shallok_generate_media_variants` with `{ assetKey, locales, prompt }`.
+- **Text vs Visual Detection**:
+  - If the base image contains translatable text: extract the source text and render localized text with matched typography for each target locale.
+  - If the base image is purely visual: adapt colors, cultural symbols, and regional aesthetics.
+
+### 3. Mandatory User Approval Before Dashboard Upload
+- **Always present the generated variants to the developer/user first for review.**
+- Once the user reviews and explicitly approves the generated variants, upload them to Shallok Dashboard and Edge CDN:
+  ```bash
+  shallok media upload <assetKey> --locale <locale> --file <localFilePath> --yes
+  ```
+  Or via external URL:
+  ```bash
+  shallok media upload <assetKey> --locale <locale> --url <publicUrl> --yes
+  ```
+  Or via MCP: invoke `shallok_upload_media_variant` with `{ assetKey, locale, filePath, url, altText, userApproved: true }`.
+- The uploaded variants become instantly available on the Global Edge CDN:
+  `https://<tenant>.shallok.com/media/<locale>.json`
+
+### 4. Editing a Single Variant
+- To edit, refine, or regenerate only a **single variant** for a specific locale (e.g. `de`) without touching other locales:
+  ```bash
+  shallok media edit <assetKey> --locale <locale> --prompt "<refinement_instructions_max_100_chars>"
+  ```
+  Or upload a replacement file or URL directly:
+  ```bash
+  shallok media upload <assetKey> --locale <locale> --file <replacementFile> --yes
+  ```
+  Or via MCP: invoke `shallok_edit_media_variant` with `{ assetKey, locale, prompt, userApproved: true }`.
+- Only the targeted locale variant is updated on Shallok Dashboard and Edge CDN; all other variants remain completely untouched.

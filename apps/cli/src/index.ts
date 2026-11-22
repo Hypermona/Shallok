@@ -16,6 +16,7 @@ import { contextSetCommand } from './commands/context.js';
 import { entrySetCommand } from './commands/entry.js';
 import { linkCommand } from './commands/link.js';
 import { pushCommand } from './commands/push.js';
+import { mediaListCommand, mediaGenerateCommand, mediaUploadCommand, mediaEditCommand } from './commands/media.js';
 import { mcpCommand } from './commands/mcp.js';
 import { CLI_VERSION } from './version.js';
 
@@ -228,7 +229,72 @@ program
     await pushCommand({ ...options, json: isJson });
   });
 
-// 14. MCP (Local Stdio Model Context Protocol Server)
+// 14. Media (Manage and Localize Media Assets)
+const mediaCmd = program.command('media').description('Manage and localize media assets (Images and Documents)');
+
+mediaCmd
+  .command('list')
+  .description('List media assets and localized variants from Shallok Dashboard')
+  .option('--project <id>', 'Project ID override')
+  .option('--token <token>', 'API Token override')
+  .option('--dashboard-url <url>', 'Dashboard URL override')
+  .option('--json', 'Output machine-readable JSON')
+  .action(async (options) => {
+    const isJson = options.json || program.opts().json;
+    await mediaListCommand({ ...options, json: isJson });
+  });
+
+mediaCmd
+  .command('generate <assetKey>')
+  .description('Generate localized variants with AI and upload to Shallok Dashboard once user approves')
+  .option('--locales <locales>', 'Comma-separated target locales (e.g. es,de,fr)')
+  .option('--prompt <text>', 'Custom creative prompt / guidance (max 100 chars)')
+  .option('-y, --yes', 'Automatically approve and upload variants without prompt')
+  .option('--project <id>', 'Project ID override')
+  .option('--token <token>', 'API Token override')
+  .option('--dashboard-url <url>', 'Dashboard URL override')
+  .option('--json', 'Output machine-readable JSON')
+  .action(async (assetKey, options) => {
+    const isJson = options.json || program.opts().json;
+    await mediaGenerateCommand(assetKey, { ...options, json: isJson });
+  });
+
+mediaCmd
+  .command('upload <assetKey>')
+  .description('Upload an approved localized media variant file or URL to Shallok Dashboard')
+  .requiredOption('--locale <locale>', 'Target locale (e.g. de, es, fr)')
+  .option('--file <filePath>', 'Path to local image or document file')
+  .option('--url <publicUrl>', 'External URL for variant asset')
+  .option('--alt <text>', 'Alt text or document title')
+  .option('-y, --yes', 'Skip confirmation prompt')
+  .option('--project <id>', 'Project ID override')
+  .option('--token <token>', 'API Token override')
+  .option('--dashboard-url <url>', 'Dashboard URL override')
+  .option('--json', 'Output machine-readable JSON')
+  .action(async (assetKey, options) => {
+    const isJson = options.json || program.opts().json;
+    await mediaUploadCommand(assetKey, { ...options, json: isJson });
+  });
+
+mediaCmd
+  .command('edit <assetKey>')
+  .description('Edit / refine a single localized variant with AI and upload to Shallok Dashboard once user approves')
+  .requiredOption('--locale <locale>', 'Target locale of the single variant to edit (e.g. de)')
+  .option('--prompt <text>', 'Refinement instructions (max 100 chars)')
+  .option('--file <filePath>', 'Path to replacement file')
+  .option('--url <url>', 'Replacement external URL')
+  .option('--alt <text>', 'Updated alt text or description')
+  .option('-y, --yes', 'Skip confirmation prompt')
+  .option('--project <id>', 'Project ID override')
+  .option('--token <token>', 'API Token override')
+  .option('--dashboard-url <url>', 'Dashboard URL override')
+  .option('--json', 'Output machine-readable JSON')
+  .action(async (assetKey, options) => {
+    const isJson = options.json || program.opts().json;
+    await mediaEditCommand(assetKey, { ...options, json: isJson });
+  });
+
+// 15. MCP (Local Stdio Model Context Protocol Server)
 program
   .command('mcp')
   .description('Start local stdio Model Context Protocol (MCP) server for Cursor / Claude / Antigravity')

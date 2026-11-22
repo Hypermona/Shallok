@@ -495,5 +495,150 @@ describe('End-to-End Localization Pipeline', () => {
       process.chdir(prevCwd);
     }
   });
+
+  it('verifies LOCAL_MCP_TOOLS includes shallok media tools with correct schemas', async () => {
+    const { LOCAL_MCP_TOOLS } = await import('../apps/cli/src/commands/mcp.js');
+
+    const generateTool = LOCAL_MCP_TOOLS.find((t) => t.name === 'shallok_generate_media_variants');
+    expect(generateTool).toBeDefined();
+    expect(generateTool?.inputSchema.required).toContain('assetKey');
+
+    const uploadTool = LOCAL_MCP_TOOLS.find((t) => t.name === 'shallok_upload_media_variant');
+    expect(uploadTool).toBeDefined();
+    expect(uploadTool?.inputSchema.required).toEqual(
+      expect.arrayContaining(['assetKey', 'locale', 'userApproved'])
+    );
+
+    const editTool = LOCAL_MCP_TOOLS.find((t) => t.name === 'shallok_edit_media_variant');
+    expect(editTool).toBeDefined();
+    expect(editTool?.inputSchema.required).toEqual(
+      expect.arrayContaining(['assetKey', 'locale', 'userApproved'])
+    );
+  });
+
+  it('verifies all skill files contain Rule 8: Media & Asset Localization Workflow', async () => {
+    const skillsDir = path.resolve(__dirname, '../skills');
+    const skillDirs = await fs.readdir(skillsDir);
+
+    for (const dir of skillDirs) {
+      const skillFile = path.join(skillsDir, dir, 'SKILL.md');
+      const stat = await fs.stat(skillFile).catch(() => null);
+      if (stat && stat.isFile()) {
+        const content = await fs.readFile(skillFile, 'utf8');
+        expect(content).toContain('## Rule 8: Media & Asset Localization Workflow');
+        expect(content).toContain('shallok media list');
+        expect(content).toContain('shallok media generate');
+        expect(content).toContain('shallok media upload');
+        expect(content).toContain('shallok media edit');
+      }
+    }
+  });
+
+  it('mediaUploadCommand and mediaEditCommand upload variant to dashboard correctly', async () => {
+    const { mediaUploadCommand, mediaEditCommand } = await import('../apps/cli/src/commands/media.js');
+
+    const testProjectDir = path.join(tempDir, 'media-test-project');
+    await fs.mkdir(testProjectDir, { recursive: true });
+
+    await fs.writeFile(
+      path.join(testProjectDir, 'localization.json'),
+      JSON.stringify(
+        {
+          schema_version: 1,
+          localization_version: 1,
+          source_locale: 'en',
+          supported_locales: ['en', 'de', 'es'],
+          framework: {
+            name: 'react',
+            router: null,
+            localization_library: 'react-i18next',
+            library_version: null,
+          },
+          paths: {
+            source_directories: ['src'],
+            base_directory: 'localization_base',
+            translations_directory: 'messages',
+          },
+          key_strategy: 'semantic',
+          translation: { provider: 'mock', model: null, batch_size: 25 },
+          options: {
+            include_accessibility_text: true,
+            preserve_obsolete_keys: true,
+            require_review_for_ambiguous_strings: true,
+            require_review_for_stale_translations: true,
+          },
+          cloud: {
+            project_id: 'test-media-project',
+            dashboard_url: 'https://test-dash.shallok.com',
+          },
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    await fs.writeFile(
+      path.join(testProjectDir, '.env.local'),
+      'SHALLOK_API_TOKEN=shk_live_test_media_token_123\n',
+      'utf8'
+    );
+
+    const originalFetch = globalThis.fetch;
+    const fetchCalls: { url: string; method?: string; body?: any; headers?: any }[] = [];
+
+    // @ts-ignore
+    globalThis.fetch = async (url: string, init?: RequestInit) => {
+      fetchCalls.push({
+        url: url.toString(),
+        method: init?.method,
+        body: init?.body ? JSON.parse(init.body as string) : undefined,
+        headers: init?.headers,
+      });
+
+      return new Response(JSON.stringify({ success: true, variant: { id: 'v1' } }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    };
+
+    const prevCwd = process.cwd();
+    try {
+      process.chdir(testProjectDir);
+
+      // Test upload variant command with yes=true
+      await mediaUploadCommand('marketing.hero_banner', {
+        locale: 'de',
+        url: 'https://example.com/banner-de.png',
+        alt: 'Banner DE',
+        yes: true,
+      });
+
+      expect(fetchCalls.length).toBe(1);
+      expect(fetchCalls[0].url).toContain('/api/projects/test-media-project/media/marketing.hero_banner/variants');
+      expect(fetchCalls[0].body).toEqual({
+        locale: 'de',
+        url: 'https://example.com/banner-de.png',
+        altText: 'Banner DE',
+      });
+
+      // Test edit variant command with yes=true
+      await mediaEditCommand('marketing.hero_banner', {
+        locale: 'de',
+        url: 'https://example.com/banner-de-v2.png',
+        prompt: 'Make it brighter',
+        yes: true,
+      });
+
+      expect(fetchCalls.length).toBe(3); // 1 GET for assets + 1 POST for edit
+      const editPostCall = fetchCalls[2];
+      expect(editPostCall.url).toContain('/api/projects/test-media-project/media/marketing.hero_banner/variants');
+      expect(editPostCall.body.locale).toBe('de');
+      expect(editPostCall.body.url).toBe('https://example.com/banner-de-v2.png');
+    } finally {
+      process.chdir(prevCwd);
+      globalThis.fetch = originalFetch;
+    }
+  });
 });
 
